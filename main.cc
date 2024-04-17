@@ -6,34 +6,32 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
-#include <numeric>
+#include <numeric>  // Include this header for std::accumulate
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 using boost::asio::ip::tcp;
 
-// Function to parse numbers from a string
-std::vector<double> parse_numbers(const std::string& body) {
-    std::istringstream iss(body);
+// Forward declaration for perform_calculation function
+double perform_calculation(const std::string& function, const std::vector<double>& numbers);
+
+// Function to parse numbers from a JSON string
+std::vector<double> parse_numbers_from_json(const std::string& json_data) {
     std::vector<double> numbers;
-    double num;
-    while (iss >> num) {
-        numbers.push_back(num);
+    try {
+        boost::property_tree::ptree root;
+        std::istringstream json_stream(json_data);
+        boost::property_tree::read_json(json_stream, root);
+        
+        for (const auto& item : root.get_child("numbers")) {
+            numbers.push_back(item.second.get_value<double>());
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
     }
     return numbers;
 }
 
-// Simple function calculations
-double perform_calculation(const std::string& function, const std::vector<double>& numbers) {
-    if (function == "sum") {
-        return std::accumulate(numbers.begin(), numbers.end(), 0.0);
-    } else if (function == "average") {
-        if (!numbers.empty()) {
-            return std::accumulate(numbers.begin(), numbers.end(), 0.0) / numbers.size();
-        }
-    }
-    return 42; // Arbitrary number for unknown functions or empty list
-}
-
-// Function to handle the client request
 void handle_client(std::shared_ptr<tcp::socket> socket) {
     try {
         boost::asio::streambuf request;
@@ -52,16 +50,37 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
         std::istringstream request_line_stream(request_line);
         request_line_stream >> method >> path;
 
+        // Skip headers
+        std::string line;
+        while (std::getline(request_stream, line) && line != "\r") {}
+
+        // Read JSON data
+        std::string body(std::istreambuf_iterator<char>(request_stream), {});
+
         // Prepare response
         std::string response;
         if (method == "POST" && path == "/calculate") {
-            std::string function_name;
-            request_line_stream >> function_name;
-            std::string body(std::istreambuf_iterator<char>(request_stream), {});
+            // Parse JSON data
+            std::vector<double> numbers = parse_numbers_from_json(body);
+            std::string function_name = "unknown";
+            try {
+                boost::property_tree::ptree root;
+                std::istringstream json_stream(body);
+                boost::property_tree::read_json(json_stream, root);
+                function_name = root.get<std::string>("function");
+            } catch (const std::exception& e) {
+                std::cerr << "Error parsing JSON: " << e.what() << std::endl;
+            }
 
-            std::vector<double> numbers = parse_numbers(body);
+            std::cout << "Function Name: " << function_name << std::endl;
+            std::cout << "JSON Data: " << body << std::endl;
+
+            // Perform calculation based on function name
             double result = perform_calculation(function_name, numbers);
 
+            std::cout << "Result: " << result << std::endl;
+
+            // Prepare response
             response = "HTTP/1.1 200 OK\r\n"
                        "Content-Type: text/plain\r\n"
                        "Content-Length: " + std::to_string(std::to_string(result).length()) + "\r\n"
@@ -85,6 +104,22 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
     }
 }
 
+
+
+
+// Definition for perform_calculation function
+double perform_calculation(const std::string& function, const std::vector<double>& numbers) {
+    if (function == "sum") {
+        return std::accumulate(numbers.begin(), numbers.end(), 0.0);
+    } else if (function == "average") {
+        if (!numbers.empty()) {
+            return std::accumulate(numbers.begin(), numbers.end(), 0.0) / numbers.size();
+        }
+    }
+    return 2137; // Arbitrary number for unknown functions or empty list
+}
+
+// Main function
 int main() {
     try {
         boost::asio::io_context io_context;
