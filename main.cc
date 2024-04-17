@@ -3,8 +3,35 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <sstream>
+#include <vector>
+#include <algorithm>
+#include <numeric>
 
 using boost::asio::ip::tcp;
+
+// Function to parse numbers from a string
+std::vector<double> parse_numbers(const std::string& body) {
+    std::istringstream iss(body);
+    std::vector<double> numbers;
+    double num;
+    while (iss >> num) {
+        numbers.push_back(num);
+    }
+    return numbers;
+}
+
+// Simple function calculations
+double perform_calculation(const std::string& function, const std::vector<double>& numbers) {
+    if (function == "sum") {
+        return std::accumulate(numbers.begin(), numbers.end(), 0.0);
+    } else if (function == "average") {
+        if (!numbers.empty()) {
+            return std::accumulate(numbers.begin(), numbers.end(), 0.0) / numbers.size();
+        }
+    }
+    return 42; // Arbitrary number for unknown functions or empty list
+}
 
 // Function to handle the client request
 void handle_client(std::shared_ptr<tcp::socket> socket) {
@@ -13,32 +40,45 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
         boost::system::error_code error;
 
         // Reading the request
-        while (boost::asio::read_until(*socket, request, "\r\n\r\n", error)) {
-            if (error && error != boost::asio::error::eof) {
-                throw boost::system::system_error(error);
-            } else if (error == boost::asio::error::eof) {
-                // Client closed the connection
-                std::cerr << "Client closed the connection.\n";
-                return;  // Clean exit on client connection close
-            }
+        boost::asio::read_until(*socket, request, "\r\n\r\n", error);
+        if (error && error != boost::asio::error::eof) {
+            throw boost::system::system_error(error);
+        }
 
-            // Prepare a response
-            std::string response =
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: text/plain\r\n"
-                "Content-Length: 12\r\n"
-                "Connection: close\r\n\r\n"
-                "Hello World!";
+        // Extract the request as a string
+        std::istream request_stream(&request);
+        std::string request_line, method, path;
+        std::getline(request_stream, request_line);
+        std::istringstream request_line_stream(request_line);
+        request_line_stream >> method >> path;
 
-            // Sending a response
-            boost::asio::write(*socket, boost::asio::buffer(response), error);
-            if (error) {
-                throw boost::system::system_error(error);
-            }
+        // Prepare response
+        std::string response;
+        if (method == "POST" && path == "/calculate") {
+            std::string function_name;
+            request_line_stream >> function_name;
+            std::string body(std::istreambuf_iterator<char>(request_stream), {});
 
-            // Since the response has been sent and connection is to be closed,
-            // break the loop to prevent further reads.
-            break;
+            std::vector<double> numbers = parse_numbers(body);
+            double result = perform_calculation(function_name, numbers);
+
+            response = "HTTP/1.1 200 OK\r\n"
+                       "Content-Type: text/plain\r\n"
+                       "Content-Length: " + std::to_string(std::to_string(result).length()) + "\r\n"
+                       "Connection: close\r\n\r\n" +
+                       std::to_string(result);
+        } else {
+            response = "HTTP/1.1 404 Not Found\r\n"
+                       "Content-Type: text/plain\r\n"
+                       "Content-Length: 13\r\n"
+                       "Connection: close\r\n\r\n"
+                       "404 Not Found";
+        }
+
+        // Sending the response
+        boost::asio::write(*socket, boost::asio::buffer(response), error);
+        if (error) {
+            throw boost::system::system_error(error);
         }
     } catch (std::exception& e) {
         std::cerr << "Exception in thread: " << e.what() << "\n";
