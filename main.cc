@@ -1,33 +1,55 @@
-#include <iostream>
 #include <boost/asio.hpp>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <thread>
 
-using namespace boost::asio;
-using ip::tcp;
+using boost::asio::ip::tcp;
 
-void handle_request(tcp::socket& socket) {
-    boost::system::error_code error;
-    char buffer[1024];
+// Function to handle the client request
+void handle_client(std::shared_ptr<tcp::socket> socket) {
+    try {
+        boost::asio::streambuf request;
+        boost::system::error_code error;
 
-    // Read the request from the client
-    size_t bytes_transferred = socket.read_some(buffer, error);
+        // Reading the request
+        boost::asio::read_until(*socket, request, "\r\n\r\n", error);
+        if (error) throw boost::system::system_error(error);
 
-    if (!error) {
-        // Send a response back to the client
-        std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
-        socket.write_some(buffer(response.c_str(), response.size()), error);
+        // Sending a response
+        std::string response =
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/plain\r\n"
+            "Content-Length: 12\r\n"
+            "Connection: close\r\n\r\n"
+            "Hello World!";
+
+        boost::asio::write(*socket, boost::asio::buffer(response), error);
+
+    } catch (std::exception& e) {
+        std::cerr << "Exception in thread: " << e.what() << "\n";
     }
 }
 
 int main() {
-    io_service io_service;
-    tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), 8080));
+    try {
+        boost::asio::io_context io_context;
 
-    while (true) {
-        tcp::socket socket(io_service);
-        acceptor.accept(socket);
+        // Setting up the server to listen on TCP port 8080
+        tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), 8080));
+        std::cout << "Server is listening on port 8080...\n";
 
-        // Handle the request in a separate thread
-        std::thread(handle_request, std::move(socket)).detach();
+        // Infinite loop to serve requests
+        while (true) {
+            // Use shared_ptr to manage the socket's lifetime
+            auto socket = std::make_shared<tcp::socket>(io_context);
+            acceptor.accept(*socket);
+
+            // Handle the client in a separate thread
+            std::thread(handle_client, socket).detach();
+        }
+    } catch (std::exception& e) {
+        std::cerr << "Exception: " << e.what() << "\n";
     }
 
     return 0;

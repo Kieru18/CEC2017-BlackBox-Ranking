@@ -3,15 +3,20 @@ project(BlackBoxRanking)
 
 option(USE_STANDALONE_ASIO "set ON to use standalone Asio instead of Boost.Asio" OFF)
 
+if(NOT MSVC)
+    add_compile_options(-std=c++2a -Wall -Wextra -Werror -pedantic)
+else()
+    add_compile_options(/W1)
+endif()
+
 file(GLOB SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc")          #Get all cpp files
 file(GLOB HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/headers/*.h")   #Get all header files
 
 set_property(GLOBAL PROPERTY CXX_STANDARD 20)
 set_property(GLOBAL PROPERTY CXX_STANDARD_REQUIRED ON)
-add_compile_options(-std=c++2a -Wall -Wextra -Werror -pedantic)
 
 # Boost
-find_package(Boost 1.71 REQUIRED COMPONENTS system filesystem regex date_time chrono)
+find_package(Boost 1.71 REQUIRED COMPONENTS system filesystem regex date_time chrono thread)
 
 # If Boost was found, link directories might be needed (depends on Boost and system setup)
 include_directories(${Boost_INCLUDE_DIRS})
