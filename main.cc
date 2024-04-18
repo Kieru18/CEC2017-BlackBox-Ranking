@@ -9,8 +9,72 @@
 #include <numeric>  // Include this header for std::accumulate
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <cppconn/driver.h>
+#include <cppconn/exception.h>
+#include <cppconn/resultset.h>
+#include <cppconn/statement.h>
 
 using boost::asio::ip::tcp;
+
+
+std::unique_ptr<sql::ResultSet> get_database_result(const std::string& request){
+        sql::Driver *driver;
+        sql::Connection *connection;
+        sql::Statement *statement;
+        try {
+
+
+        // Create a MySQL driver instance
+        driver = get_driver_instance();
+
+        // Establish a connection to the MySQL database
+        connection = driver->connect("tcp://127.0.0.1:3306", "zpr_user", "zpr_password");
+
+        // Use the specific database
+        connection->setSchema("zpr_example_database");
+
+        // Execute SQL query
+        statement = connection->createStatement();
+        return std::unique_ptr<sql::ResultSet>(statement->executeQuery(request));
+        }
+        
+        catch (sql::SQLException &e) {
+            std::cerr << "SQL Error: " << e.what() << std::endl;
+        }
+        return nullptr;
+
+}       
+
+
+
+
+std::string get_user_data(const int& id){
+    
+    try {
+        std::stringstream ssreq;
+        ssreq << "SELECT * FROM zpr_example_table where id = " << id;
+        std::unique_ptr<sql::ResultSet> database_request_result = get_database_result(ssreq.str());
+
+     if (database_request_result && database_request_result->next()) {
+            // Pobieranie danych z wyniku zapytania
+            int fetched_id = database_request_result->getInt("id"); // Można użyć getInt z nazwą kolumny
+            std::string name = database_request_result->getString("name");
+
+            // Tworzenie wynikowego stringa z danymi użytkownika
+            std::stringstream ssres;
+            ssres << "ID: " << fetched_id << " name: " << name;
+            std::string user_data_result = ssres.str();
+
+            return user_data_result;
+        } else {
+            // Jeśli zapytanie nie zwróciło żadnych rekordów
+            return "ERROR - No user data found for ID: " + std::to_string(id);
+        }
+    } catch (sql::SQLException &e) {
+        std::cerr << "SQL Error: " << e.what() << std::endl;
+        return "ERROR - SQL Exception occurred";
+    }
+}
 
 // Forward declaration for perform_calculation function
 double perform_calculation(const std::string& function, const std::vector<double>& numbers);
@@ -30,6 +94,21 @@ std::vector<double> parse_numbers_from_json(const std::string& json_data) {
         std::cerr << "Error parsing JSON: " << e.what() << std::endl;
     }
     return numbers;
+}
+
+int parse_id_number_from_json(const std::string& json_data) {
+    int id_number = -1;
+    try {
+        boost::property_tree::ptree root;
+        std::istringstream json_stream(json_data);
+        boost::property_tree::read_json(json_stream, root);
+        
+        id_number = root.get_child("id").get_value<int>();
+        
+    } catch (const std::exception& e) {
+        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
+    }
+    return id_number;
 }
 
 void handle_client(std::shared_ptr<tcp::socket> socket) {
@@ -86,7 +165,18 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
                        "Content-Length: " + std::to_string(std::to_string(result).length()) + "\r\n"
                        "Connection: close\r\n\r\n" +
                        std::to_string(result);
-        } else {
+        } 
+        else if(method == "POST" && path == "/get_username") {
+            int id_number = parse_id_number_from_json(body);
+            std::cout << "Got 'get_username' request for id: " << id_number <<"\n";
+            std::string id_question_result = get_user_data(id_number);
+            response = "HTTP/1.1 200 OK\r\n"
+                       "Content-Type: text/plain\r\n"
+                       "Content-Length: " + std::to_string(id_question_result.length()) + "\r\n"
+                       "Connection: close\r\n\r\n" +
+                       id_question_result;
+        }
+        else {
             response = "HTTP/1.1 404 Not Found\r\n"
                        "Content-Type: text/plain\r\n"
                        "Content-Length: 13\r\n"
@@ -119,6 +209,9 @@ double perform_calculation(const std::string& function, const std::vector<double
     return 2137; // Arbitrary number for unknown functions or empty list
 }
 
+
+
+
 // Main function
 int main() {
     try {
@@ -137,7 +230,7 @@ int main() {
             std::thread(handle_client, socket).detach();
         }
     } catch (std::exception& e) {
-        std::cerr << "Exception: " << e.what() << "\n";
+        std::cerr << "Exception:" << e.what() << "\n";
     }
 
     return 0;

@@ -9,6 +9,9 @@ else()
     add_compile_options(/W1)
 endif()
 
+# Ustawianie ścieżki do plików nagłówkowych MySQL C++ Connector
+include_directories(/usr/include/mysql/cppconn)
+
 file(GLOB SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc")          #Get all cpp files
 file(GLOB HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/headers/*.h")   #Get all header files
 
@@ -33,3 +36,10 @@ FetchContent_MakeAvailable(BoostAsio)
 
 add_executable(main main.cc ${SRC})
 target_link_libraries(main ${Boost_LIBRARIES})
+
+# Dodanie opcji linkowania do biblioteki MySQL C++ Connector
+target_link_libraries(main ${Boost_LIBRARIES} mysqlcppconn)
+
+# Dodatkowe opcje linkowania
+target_link_directories(main PRIVATE /usr/lib)  # Ścieżka do bibliotek linkujących (jeśli wymagane)
+target_link_libraries(main mysqlcppconn)         # Biblioteka do linkowania
