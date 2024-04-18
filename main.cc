@@ -1,5 +1,6 @@
 #include <boost/asio.hpp>
 #include <iostream>
+#include <sstream>
 #include <memory>
 #include <string>
 #include <thread>
@@ -15,21 +16,93 @@
 #include <cppconn/statement.h>
 #include <ctime> // ctime()
 
-#include <Poco/Net/SMTPClientSession.h>
-#include <Poco/Net/NetException.h>
 
-#include <Poco/Net/POP3ClientSession.h>
+
+#include <Poco/Net/SecureSMTPClientSession.h>
 #include <Poco/Net/MailMessage.h>
+#include <Poco/Net/NetException.h>
+#include <Poco/Net/StringPartSource.h>
+#include <Poco/Net/FilePartSource.h>
+
+#include <random>
+#include <string>
 
 using boost::asio::ip::tcp;
 
+using namespace Poco::Net;
+using namespace std;
 
-std::unique_ptr<sql::ResultSet> get_database_result(const std::string& request){
+std::string generateRandomApiKey(int length) {
+    // Dostępne znaki (tylko małe i duże litery alfabetu angielskiego)
+    const std::string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_int_distribution<int> distribution(0, characters.size() - 1);
+
+    std::string apiKey;
+    for (int i = 0; i < length; ++i) {
+        apiKey += characters[distribution(generator)];
+    }
+
+    return apiKey;
+}
+
+// Bardziej skomplikowana funkcja haszująca klucz API (tylko dla celów demonstracyjnych!)
+std::string hashApiKey(const std::string& apiKey) {
+    std::string hashedKey;
+
+    // Pętla po każdym znaku w kluczu API
+    for (char c : apiKey) {
+        // Operacje na znakach dla generowania złożonego "haszowania"
+        char hashedChar = ((((c - 'a') * 3 + 5) % 26) +26)%26 + 'a';
+        hashedKey += hashedChar;
+    }
+
+    return hashedKey;
+}
+void sendApiKey(const std::string& recipentAddress, const std::string& apiKey){
+
+    std::string smtpServerAddress = "poczta.int.pl";
+    std::string userLogin = "admin.zpr@int.pl";
+    std::string senderAddress = userLogin;
+    std::string userPassword = "zpr_password";
+    std::stringstream statement;
+    statement <<  "Witaj, oto twój klucz api: " << apiKey << "\nNie podawaj go nikomu i nie odpowiadaj na ten mail.\n\nZ poważaniem,\nGrzegorz Florianowicz";
+    try
+    {
+        MailRecipient recipient1( MailRecipient::PRIMARY_RECIPIENT, recipentAddress );
+       
+        MailMessage message;
+        message.setRecipients( { recipient1 } );
+        message.setSubject( MailMessage::encodeWord( "Ściśle tajny klucz API od CEC2017-BlackBox-Ranking" ) );
+        message.setContentType( "multipart/mixed; charset=utf-8;" );
+        message.setSender( senderAddress );
+        message.addContent( new StringPartSource( statement.str() ) );
+       
+        SecureSMTPClientSession session( smtpServerAddress );
+        session.login();
+        session.startTLS();
+        session.login( SMTPClientSession::AUTH_PLAIN, userLogin, userPassword );
+        session.sendMessage( message );
+        session.close();
+        std::cout << "Mail sent";
+    }
+    catch( const SMTPException & e )
+    {
+        cerr << e.what() << ", message: " << e.message() << endl;
+    }
+    catch( const NetException & e )
+    {
+        cerr << e.what() << endl;
+    }
+}
+
+std::unique_ptr<sql::ResultSet> getDatabaseResult(const std::string& request){
         sql::Driver *driver;
         sql::Connection *connection;
         sql::Statement *statement;
         try {
-
 
         // Create a MySQL driver instance
         driver = get_driver_instance();
@@ -60,7 +133,7 @@ std::string get_user_data(const int& id){
     try {
         std::stringstream ssreq;
         ssreq << "SELECT * FROM zpr_example_table where id = " << id;
-        std::unique_ptr<sql::ResultSet> database_request_result = get_database_result(ssreq.str());
+        std::unique_ptr<sql::ResultSet> database_request_result = getDatabaseResult(ssreq.str());
 
      if (database_request_result && database_request_result->next()) {
             // Pobieranie danych z wyniku zapytania
@@ -118,6 +191,32 @@ int parse_id_number_from_json(const std::string& json_data) {
     return id_number;
 }
 
+template<typename T>
+T parseDataFromJson(const std::string& jsonData, const std::string& childKey){
+    T result;
+    try {
+        boost::property_tree::ptree root;
+        std::istringstream jsonStream(jsonData);
+        boost::property_tree::read_json(jsonStream, root);
+        result = root.get_child(childKey).get_value<T>();
+        
+    } catch (const std::exception& e) {
+        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
+    }
+    return result;
+
+}
+
+
+std::string generateHTTPResponse(const std::string& textResponse){
+    std::string response =  "HTTP/1.1 200 OK\r\n"
+                            "Content-Type: text/plain\r\n"
+                            "Content-Length: " + std::to_string(textResponse.length()) + "\r\n"
+                            "Connection: close\r\n\r\n" +
+                            textResponse;
+    return response;
+}
+
 void handle_client(std::shared_ptr<tcp::socket> socket) {
     try {
         boost::asio::streambuf request;
@@ -145,7 +244,40 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
 
         // Prepare response
         std::string response;
-        if (method == "POST" && path == "/calculate") {
+
+        if (method == "POST" && path == "/registrate") {
+            std::string mail = parseDataFromJson<std::string>(body, "mail");
+            std::cout << "Użytkownik o adresie mailowym " << mail <<" wyraża chęć rejestracji\n";
+            std::stringstream ssUsersTableRequest;
+            ssUsersTableRequest <<"SELECT COUNT(*) AS users_count FROM zpr_users_table WHERE mail = " << "'" << mail <<"'";
+            std::unique_ptr<sql::ResultSet> databaseRequestResult = getDatabaseResult(ssUsersTableRequest.str());
+            if (databaseRequestResult && databaseRequestResult->next()) {
+                int numOfUsersWithThatMail = databaseRequestResult->getInt("users_count");
+                std::cout << "tyle jest obecnie użytkowników o takim mailu " << numOfUsersWithThatMail << "\n";
+                if (numOfUsersWithThatMail != 0 )
+                {
+                    response = generateHTTPResponse("Istnieje użytkownik z takim adresem email (lub wystąpił jakiś błąd), nie możesz założyć konta\n");
+                }
+                else{
+                    response = generateHTTPResponse("Nie istnieje użytkownik z takim adresem email, więc możesz założyć konto. Na podany adres e-mail dostaniesz klucz api\n");
+                    std::string generatedApikey = generateRandomApiKey(20);
+                    sendApiKey(mail, generatedApikey);
+                    std::string hashedApiKey = hashApiKey(generatedApikey);
+                    std::cout << "Oto zahashowany klucz api: " << hashedApiKey << "\n";
+
+                    std::stringstream ssAddUserToTable;
+                    ssAddUserToTable << "INSERT INTO zpr_users_table (mail, hashed_api_key, spend) VALUES " << "('"<<mail<<"', '"<<hashedApiKey<<"' ,"<<0<<");";
+                    std::cout << ssAddUserToTable.str()<<"\n";
+                    getDatabaseResult(ssAddUserToTable.str());
+
+                    std::cout << "Dodano użytkownika " <<mail<<" do tablicy z bazy danych\n";
+                }
+            }
+            else {
+                std::cerr << "Wystąpił błąd z pobieraniem listy użytkowników\n";
+            }
+        }
+        else if (method == "POST" && path == "/calculate") {
             // Parse JSON data
             std::vector<double> numbers = parse_numbers_from_json(body);
             std::string function_name = "unknown";
@@ -213,14 +345,21 @@ double perform_calculation(const std::string& function, const std::vector<double
             return std::accumulate(numbers.begin(), numbers.end(), 0.0) / numbers.size();
         }
     }
-    return 2137; // Arbitrary number for unknown functions or empty list
+    return 2000; // Arbitrary number for unknown functions or empty list
+
 }
+
+
+
+
+
 
 
 
 
 // Main function
 int main() {
+    //send_api_key("metyldaa@gmail.com", "miewam problemy z oddychaniem");
     try {
         boost::asio::io_context io_context;
 

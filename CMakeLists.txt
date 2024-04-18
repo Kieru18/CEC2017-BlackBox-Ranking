@@ -35,7 +35,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(BoostAsio)
 
 add_executable(main main.cc ${SRC})
-target_link_libraries(main ${Boost_LIBRARIES})
 
 # Dodanie opcji linkowania do biblioteki MySQL C++ Connector
 target_link_libraries(main ${Boost_LIBRARIES} mysqlcppconn Poco::Net Poco::Foundation)
@@ -43,3 +42,15 @@ target_link_libraries(main ${Boost_LIBRARIES} mysqlcppconn Poco::Net Poco::Found
 # Dodatkowe opcje linkowania
 target_link_directories(main PRIVATE /usr/lib)  # Ścieżka do bibliotek linkujących (jeśli wymagane)
 target_link_libraries(main mysqlcppconn)         # Biblioteka do linkowania
+target_link_libraries(main
+    PocoNetSSL
+    PocoCrypto
+    PocoUtil
+    PocoNet
+    PocoXML
+    PocoFoundation
+    ssl
+    crypto
+    PocoJSON
+    pthread
+)
