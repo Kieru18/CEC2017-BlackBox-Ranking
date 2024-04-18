@@ -13,6 +13,13 @@
 #include <cppconn/exception.h>
 #include <cppconn/resultset.h>
 #include <cppconn/statement.h>
+#include <ctime> // ctime()
+
+#include <Poco/Net/SMTPClientSession.h>
+#include <Poco/Net/NetException.h>
+
+#include <Poco/Net/POP3ClientSession.h>
+#include <Poco/Net/MailMessage.h>
 
 using boost::asio::ip::tcp;
 

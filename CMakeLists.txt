@@ -20,6 +20,8 @@ set_property(GLOBAL PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Boost
 find_package(Boost 1.71 REQUIRED COMPONENTS system filesystem regex date_time chrono thread)
+find_package(Poco REQUIRED Net Foundation)
+
 
 # If Boost was found, link directories might be needed (depends on Boost and system setup)
 include_directories(${Boost_INCLUDE_DIRS})
@@ -38,7 +40,7 @@ add_executable(main main.cc ${SRC})
 target_link_libraries(main ${Boost_LIBRARIES})
 
 # Dodanie opcji linkowania do biblioteki MySQL C++ Connector
-target_link_libraries(main ${Boost_LIBRARIES} mysqlcppconn)
+target_link_libraries(main ${Boost_LIBRARIES} mysqlcppconn Poco::Net Poco::Foundation)
 
 # Dodatkowe opcje linkowania
 target_link_directories(main PRIVATE /usr/lib)  # Ścieżka do bibliotek linkujących (jeśli wymagane)
