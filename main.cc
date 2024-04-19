@@ -28,7 +28,7 @@
 using boost::asio::ip::tcp;
 using namespace Poco::Net;
 
-std::string generate_random_api_key(int length) {
+std::string generateRandomApiKey(int length) {
     const std::string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     std::random_device rd;
@@ -43,7 +43,7 @@ std::string generate_random_api_key(int length) {
     return api_key;
 }
 
-std::string hash_api_key(const std::string& api_key) {
+std::string hashApiKey(const std::string& api_key) {
     std::string hashed_key;
 
     for (char c : api_key) {
@@ -53,7 +53,7 @@ std::string hash_api_key(const std::string& api_key) {
 
     return hashed_key;
 }
-void send_api_key(const std::string& recipent_address, const std::string& api_key){
+void sendApiKey(const std::string& recipent_address, const std::string& api_key){
 
     std::string smtp_server_address = "poczta.int.pl";
     std::string user_login = "zpr.admin@int.pl";
@@ -90,7 +90,7 @@ void send_api_key(const std::string& recipent_address, const std::string& api_ke
     }
 }
 
-std::unique_ptr<sql::ResultSet> get_database_result(const std::string& request){
+std::unique_ptr<sql::ResultSet> getDatabaseResult(const std::string& request){
         sql::Driver *driver;
         sql::Connection *connection;
         sql::Statement *statement;
@@ -110,11 +110,11 @@ std::unique_ptr<sql::ResultSet> get_database_result(const std::string& request){
         return nullptr;
 }       
 
-std::string get_user_data(const int& id){
+std::string getUserData(const int& id){
     try {
             std::stringstream ssreq;
             ssreq << "SELECT * FROM zpr_example_table where id = " << id;
-            std::unique_ptr<sql::ResultSet> database_request_result = get_database_result(ssreq.str());
+            std::unique_ptr<sql::ResultSet> database_request_result = getDatabaseResult(ssreq.str());
 
         if (database_request_result && database_request_result->next()) {
                 int fetched_id = database_request_result->getInt("id");
@@ -134,7 +134,7 @@ std::string get_user_data(const int& id){
     }
 }
 
-double perform_calculation(const std::string& function, const std::vector<double>& numbers);
+double performCalculation(const std::string& function, const std::vector<double>& numbers);
 
 std::vector<double> parse_numbers_from_json(const std::string& json_data) {
     std::vector<double> numbers;
@@ -153,7 +153,7 @@ std::vector<double> parse_numbers_from_json(const std::string& json_data) {
 }
 
 template<typename T>
-T parse_data_from_json(const std::string& jsonData, const std::string& childKey){
+T parseDataFromJson(const std::string& jsonData, const std::string& childKey){
     T result;
     try {
         boost::property_tree::ptree root;
@@ -168,7 +168,7 @@ T parse_data_from_json(const std::string& jsonData, const std::string& childKey)
     return result;
 }
 
-std::string generate_HTTP_response(const std::string& textResponse){
+std::string generateHttpResponse(const std::string& textResponse){
     std::string response =  "HTTP/1.1 200 OK\r\n"
                             "Content-Type: text/plain\r\n"
                             "Content-Length: " + std::to_string(textResponse.length()) + "\r\n"
@@ -177,7 +177,7 @@ std::string generate_HTTP_response(const std::string& textResponse){
     return response;
 }
 
-void handle_client(std::shared_ptr<tcp::socket> socket) {
+void handleClient(std::shared_ptr<tcp::socket> socket) {
     try {
         boost::asio::streambuf request;
         boost::system::error_code error;
@@ -200,29 +200,29 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
         std::string response;
 
         if (method == "POST" && path == "/registrate") {
-            std::string mail = parse_data_from_json<std::string>(body, "mail");
+            std::string mail = parseDataFromJson<std::string>(body, "mail");
             std::cout << "Użytkownik o adresie mailowym " << mail <<" wyraża chęć rejestracji\n";
             std::stringstream ss_users_table_request;
             ss_users_table_request <<"SELECT COUNT(*) AS users_count FROM zpr_users_table WHERE mail = " << "'" << mail <<"'";
-            std::unique_ptr<sql::ResultSet> database_request_result = get_database_result(ss_users_table_request.str());
+            std::unique_ptr<sql::ResultSet> database_request_result = getDatabaseResult(ss_users_table_request.str());
             if (database_request_result && database_request_result->next()) {
                 int num_of_users_with_that_mail = database_request_result->getInt("users_count");
                 std::cout << "tyle jest obecnie użytkowników o takim mailu " << num_of_users_with_that_mail << "\n";
                 if (num_of_users_with_that_mail != 0 )
                 {
-                    response = generate_HTTP_response("Istnieje użytkownik z takim adresem email (lub wystąpił jakiś błąd), nie możesz założyć konta\n");
+                    response = generateHttpResponse("Istnieje użytkownik z takim adresem email (lub wystąpił jakiś błąd), nie możesz założyć konta\n");
                 }
                 else{
-                    response = generate_HTTP_response("Nie istnieje użytkownik z takim adresem email, więc możesz założyć konto. Na podany adres e-mail dostaniesz klucz api\n");
-                    std::string generated_api_key = generate_random_api_key(20);
-                    send_api_key(mail, generated_api_key);
-                    std::string hashed_api_key = hash_api_key(generated_api_key);
+                    response = generateHttpResponse("Nie istnieje użytkownik z takim adresem email, więc możesz założyć konto. Na podany adres e-mail dostaniesz klucz api\n");
+                    std::string generated_api_key = generateRandomApiKey(20);
+                    sendApiKey(mail, generated_api_key);
+                    std::string hashed_api_key = hashApiKey(generated_api_key);
                     std::cout << "Oto zahashowany klucz api: " << hashed_api_key << "\n";
 
                     std::stringstream ss_add_user_to_table;
                     ss_add_user_to_table << "INSERT INTO zpr_users_table (mail, hashed_api_key, spend) VALUES " << "('"<<mail<<"', '"<<hashed_api_key<<"' ,"<<0<<");";
                     std::cout << ss_add_user_to_table.str()<<"\n";
-                    get_database_result(ss_add_user_to_table.str());
+                    getDatabaseResult(ss_add_user_to_table.str());
 
                     std::cout << "Dodano użytkownika " <<mail<<" do tablicy z bazy danych\n";
                 }
@@ -246,14 +246,14 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
             std::cout << "Function Name: " << function_name << std::endl;
             std::cout << "JSON Data: " << body << std::endl;
 
-            double result = perform_calculation(function_name, numbers);
+            double result = performCalculation(function_name, numbers);
 
             std::cout << "Result: " << result << std::endl;
 
-            response = generate_HTTP_response(std::to_string(result));           
+            response = generateHttpResponse(std::to_string(result));           
         }
         else {
-            response = generate_HTTP_response("404 Not Found");
+            response = generateHttpResponse("404 Not Found");
         }
 
         boost::asio::write(*socket, boost::asio::buffer(response), error);
@@ -265,7 +265,7 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
     }
 }
 
-double perform_calculation(const std::string& function, const std::vector<double>& numbers) {
+double performCalculation(const std::string& function, const std::vector<double>& numbers) {
     if (function == "sum") {
         return std::accumulate(numbers.begin(), numbers.end(), 0.0);
     } else if (function == "average") {
@@ -289,7 +289,7 @@ int main() {
             auto socket = std::make_shared<tcp::socket>(io_context);
             acceptor.accept(*socket);
 
-            std::thread(handle_client, socket).detach();
+            std::thread(handleClient, socket).detach();
         }
     } catch (std::exception& e) {
         std::cerr << "Exception:" << e.what() << "\n";

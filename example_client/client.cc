@@ -22,17 +22,13 @@ int main() {
 
         boost::asio::connect(socket, resolver.resolve("localhost", "8080"));
 
-        // Prepare request
         std::string request = generate_request();
 
-        // Send request
         boost::asio::write(socket, boost::asio::buffer(request));
 
-        // Read response
         boost::asio::streambuf response;
         boost::asio::read_until(socket, response, "\r\n");
 
-        // Process and print response
         std::istream response_stream(&response);
         std::string http_version;
         response_stream >> http_version;
@@ -52,10 +48,8 @@ int main() {
             return 1;
         }
 
-        // Read the rest of the response
         boost::asio::read_until(socket, response, "\r\n\r\n");
 
-        // Output the response
         std::cout << &response << std::endl;
 
     } catch (std::exception& e) {
