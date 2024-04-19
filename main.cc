@@ -274,7 +274,6 @@ double performCalculation(const std::string& function, const std::vector<double>
         }
     }
     return 2000; // Arbitrary number for unknown functions or empty list
-
 }
 
 
