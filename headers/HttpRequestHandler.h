@@ -9,6 +9,7 @@
 #include "DatabaseManager.h"
 #include "JsonParser.h"
 #include "ApiKeyManager.h"
+#include "FunctionManager.h"
 
 #include <memory>
 
