@@ -7,16 +7,14 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
-#include <numeric>  // Include this header for std::accumulate
+#include <numeric>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
 #include <cppconn/resultset.h>
 #include <cppconn/statement.h>
-#include <ctime> // ctime()
-
-
+#include <ctime>
 
 #include <Poco/Net/SecureSMTPClientSession.h>
 #include <Poco/Net/MailMessage.h>
@@ -28,12 +26,9 @@
 #include <string>
 
 using boost::asio::ip::tcp;
-
 using namespace Poco::Net;
-using namespace std;
 
 std::string generate_random_api_key(int length) {
-    // Dostępne znaki (tylko małe i duże litery alfabetu angielskiego)
     const std::string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     std::random_device rd;
@@ -48,13 +43,10 @@ std::string generate_random_api_key(int length) {
     return api_key;
 }
 
-// Bardziej skomplikowana funkcja haszująca klucz API (tylko dla celów demonstracyjnych!)
 std::string hash_api_key(const std::string& api_key) {
     std::string hashed_key;
 
-    // Pętla po każdym znaku w kluczu API
     for (char c : api_key) {
-        // Operacje na znakach dla generowania złożonego "haszowania"
         char hashed_char = ((((c - 'a') * 3 + 5) % 26) +26)%26 + 'a';
         hashed_key += hashed_char;
     }
@@ -90,11 +82,11 @@ void send_api_key(const std::string& recipent_address, const std::string& api_ke
     }
     catch( const SMTPException & e )
     {
-        cerr << e.what() << ", message: " << e.message() << endl;
+        std::cerr << e.what() << ", message: " << e.message() << std::endl;
     }
     catch( const NetException & e )
     {
-        cerr << e.what() << endl;
+        std::cerr << e.what() << std::endl;
     }
 }
 
@@ -103,63 +95,47 @@ std::unique_ptr<sql::ResultSet> get_database_result(const std::string& request){
         sql::Connection *connection;
         sql::Statement *statement;
         try {
+            driver = get_driver_instance();
 
-        // Create a MySQL driver instance
-        driver = get_driver_instance();
-
-        // Establish a connection to the MySQL database
-        connection = driver->connect("tcp://127.0.0.1:3306", "zpr_user", "zpr_password");
-
-        // Use the specific database
-        connection->setSchema("zpr_example_database");
-
-        // Execute SQL query
-        statement = connection->createStatement();
-        return std::unique_ptr<sql::ResultSet>(statement->executeQuery(request));
+            connection = driver->connect("tcp://127.0.0.1:3306", "zpr_user", "zpr_password");
+            connection->setSchema("zpr_example_database");
+            statement = connection->createStatement();
+            return std::unique_ptr<sql::ResultSet>(statement->executeQuery(request));
         }
         
         catch (sql::SQLException &e) {
             std::cerr << "SQL Error: " << e.what() << std::endl;
         }
-        return nullptr;
 
+        return nullptr;
 }       
 
-
-
-
 std::string get_user_data(const int& id){
-    
     try {
-        std::stringstream ssreq;
-        ssreq << "SELECT * FROM zpr_example_table where id = " << id;
-        std::unique_ptr<sql::ResultSet> database_request_result = get_database_result(ssreq.str());
+            std::stringstream ssreq;
+            ssreq << "SELECT * FROM zpr_example_table where id = " << id;
+            std::unique_ptr<sql::ResultSet> database_request_result = get_database_result(ssreq.str());
 
-     if (database_request_result && database_request_result->next()) {
-            // Pobieranie danych z wyniku zapytania
-            int fetched_id = database_request_result->getInt("id"); // Można użyć getInt z nazwą kolumny
-            std::string name = database_request_result->getString("name");
+        if (database_request_result && database_request_result->next()) {
+                int fetched_id = database_request_result->getInt("id");
+                std::string name = database_request_result->getString("name");
 
-            // Tworzenie wynikowego stringa z danymi użytkownika
-            std::stringstream ssres;
-            ssres << "ID: " << fetched_id << " name: " << name;
-            std::string user_data_result = ssres.str();
+                std::stringstream ssres;
+                ssres << "ID: " << fetched_id << " name: " << name;
+                std::string user_data_result = ssres.str();
 
-            return user_data_result;
-        } else {
-            // Jeśli zapytanie nie zwróciło żadnych rekordów
-            return "ERROR - No user data found for ID: " + std::to_string(id);
-        }
+                return user_data_result;
+            } else {
+                return "ERROR - No user data found for ID: " + std::to_string(id);
+            }
     } catch (sql::SQLException &e) {
         std::cerr << "SQL Error: " << e.what() << std::endl;
         return "ERROR - SQL Exception occurred";
     }
 }
 
-// Forward declaration for perform_calculation function
 double perform_calculation(const std::string& function, const std::vector<double>& numbers);
 
-// Function to parse numbers from a JSON string
 std::vector<double> parse_numbers_from_json(const std::string& json_data) {
     std::vector<double> numbers;
     try {
@@ -176,8 +152,6 @@ std::vector<double> parse_numbers_from_json(const std::string& json_data) {
     return numbers;
 }
 
-
-
 template<typename T>
 T parse_data_from_json(const std::string& jsonData, const std::string& childKey){
     T result;
@@ -190,10 +164,9 @@ T parse_data_from_json(const std::string& jsonData, const std::string& childKey)
     } catch (const std::exception& e) {
         std::cerr << "Error parsing JSON: " << e.what() << std::endl;
     }
+
     return result;
-
 }
-
 
 std::string generate_HTTP_response(const std::string& textResponse){
     std::string response =  "HTTP/1.1 200 OK\r\n"
@@ -208,28 +181,22 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
     try {
         boost::asio::streambuf request;
         boost::system::error_code error;
-
-        // Reading the request
         boost::asio::read_until(*socket, request, "\r\n\r\n", error);
         if (error && error != boost::asio::error::eof) {
             throw boost::system::system_error(error);
         }
 
-        // Extract the request as a string
         std::istream request_stream(&request);
         std::string request_line, method, path;
         std::getline(request_stream, request_line);
         std::istringstream request_line_stream(request_line);
         request_line_stream >> method >> path;
 
-        // Skip headers
         std::string line;
         while (std::getline(request_stream, line) && line != "\r") {}
 
-        // Read JSON data
         std::string body(std::istreambuf_iterator<char>(request_stream), {});
 
-        // Prepare response
         std::string response;
 
         if (method == "POST" && path == "/registrate") {
@@ -265,7 +232,6 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
             }
         }
         else if (method == "POST" && path == "/calculate") {
-            // Parse JSON data
             std::vector<double> numbers = parse_numbers_from_json(body);
             std::string function_name = "unknown";
             try {
@@ -280,20 +246,16 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
             std::cout << "Function Name: " << function_name << std::endl;
             std::cout << "JSON Data: " << body << std::endl;
 
-            // Perform calculation based on function name
             double result = perform_calculation(function_name, numbers);
 
             std::cout << "Result: " << result << std::endl;
 
-            // Prepare response
-            response = generate_HTTP_response(std::to_string(result));
-                       
+            response = generate_HTTP_response(std::to_string(result));           
         }
         else {
             response = generate_HTTP_response("404 Not Found");
         }
 
-        // Sending the response
         boost::asio::write(*socket, boost::asio::buffer(response), error);
         if (error) {
             throw boost::system::system_error(error);
@@ -303,10 +265,6 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
     }
 }
 
-
-
-
-// Definition for perform_calculation function
 double perform_calculation(const std::string& function, const std::vector<double>& numbers) {
     if (function == "sum") {
         return std::accumulate(numbers.begin(), numbers.end(), 0.0);
@@ -320,29 +278,17 @@ double perform_calculation(const std::string& function, const std::vector<double
 }
 
 
-
-
-
-
-
-
-
-// Main function
 int main() {
-    //send_api_key("metyldaa@gmail.com", "miewam problemy z oddychaniem");
     try {
         boost::asio::io_context io_context;
 
-        // Setting up the server to listen on TCP port 8080
         tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), 8080));
         std::cout << "Server is listening on port 8080...\n";
 
-        // Infinite loop to serve requests
         while (true) {
             auto socket = std::make_shared<tcp::socket>(io_context);
             acceptor.accept(*socket);
 
-            // Handle the client in a separate thread
             std::thread(handle_client, socket).detach();
         }
     } catch (std::exception& e) {
