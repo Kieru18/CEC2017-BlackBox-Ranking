@@ -1,6 +1,4 @@
-#ifndef APIKEYMANAGER_H
-#define APIKEYMANAGER_H
-
+#pragma once
 #include <iostream>
 #include <random>
 #include <sstream>
@@ -17,5 +15,3 @@ public:
     std::string generateRandomApiKey(int length);
     void sendApiKey(const std::string& recipentAddress, const std::string& apiKey);
 };
-
-#endif // APIKEYMANAGER_H

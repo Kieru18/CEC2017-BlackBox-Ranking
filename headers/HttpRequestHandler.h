@@ -1,6 +1,4 @@
-#ifndef HTTP_REQUEST_HANDLER_H
-#define HTTP_REQUEST_HANDLER_H
-
+#pragma once
 #include <iostream>
 #include <sstream>
 #include <boost/asio.hpp>
@@ -27,5 +25,3 @@ public:
 
     void handle_client(std::shared_ptr<boost::asio::ip::tcp::socket> socket);
 };
-
-#endif // HTTP_REQUEST_HANDLER_H

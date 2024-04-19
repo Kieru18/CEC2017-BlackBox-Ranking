@@ -1,6 +1,4 @@
-#ifndef JSONPARSER_H
-#define JSONPARSER_H
-
+#pragma once
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -61,5 +59,3 @@ T JsonParser::parseDataFromJson(const std::string& jsonData, const std::string& 
 
     return result;
 }
-
-#endif // JSONPARSER_H
