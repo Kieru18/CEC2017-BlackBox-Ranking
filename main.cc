@@ -11,7 +11,7 @@
 #include <random>
 #include <string>
 
-#include "headers/HttpRequestHandler.h"
+#include "./headers/HttpRequestHandler.h"
 
 using boost::asio::ip::tcp;
 
@@ -30,10 +30,9 @@ int main() {
             auto socket = std::make_shared<tcp::socket>(io_context);
             acceptor.accept(*socket);
 
+            auto f = [socket](HttpRequestHandler* hrh) {hrh->handle_client(socket); };
             // Handle the client in a separate thread
-            std::thread([&httpHandler, socket]() {
-                httpHandler->handle_client(socket);
-            }).detach();
+            std::thread(f, socket).detach();
         }
     }
     catch (std::exception& e) {
