@@ -32,7 +32,7 @@ using boost::asio::ip::tcp;
 using namespace Poco::Net;
 using namespace std;
 
-std::string generateRandomApiKey(int length) {
+std::string generate_random_api_key(int length) {
     // Dostępne znaki (tylko małe i duże litery alfabetu angielskiego)
     const std::string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -40,50 +40,50 @@ std::string generateRandomApiKey(int length) {
     std::mt19937 generator(rd());
     std::uniform_int_distribution<int> distribution(0, characters.size() - 1);
 
-    std::string apiKey;
+    std::string api_key;
     for (int i = 0; i < length; ++i) {
-        apiKey += characters[distribution(generator)];
+        api_key += characters[distribution(generator)];
     }
 
-    return apiKey;
+    return api_key;
 }
 
 // Bardziej skomplikowana funkcja haszująca klucz API (tylko dla celów demonstracyjnych!)
-std::string hashApiKey(const std::string& apiKey) {
-    std::string hashedKey;
+std::string hash_api_key(const std::string& api_key) {
+    std::string hashed_key;
 
     // Pętla po każdym znaku w kluczu API
-    for (char c : apiKey) {
+    for (char c : api_key) {
         // Operacje na znakach dla generowania złożonego "haszowania"
-        char hashedChar = ((((c - 'a') * 3 + 5) % 26) +26)%26 + 'a';
-        hashedKey += hashedChar;
+        char hashed_char = ((((c - 'a') * 3 + 5) % 26) +26)%26 + 'a';
+        hashed_key += hashed_char;
     }
 
-    return hashedKey;
+    return hashed_key;
 }
-void sendApiKey(const std::string& recipentAddress, const std::string& apiKey){
+void send_api_key(const std::string& recipent_address, const std::string& api_key){
 
-    std::string smtpServerAddress = "poczta.int.pl";
-    std::string userLogin = "admin.zpr@int.pl";
-    std::string senderAddress = userLogin;
-    std::string userPassword = "zpr_password";
+    std::string smtp_server_address = "poczta.int.pl";
+    std::string user_login = "zpr.admin@int.pl";
+    std::string sender_address = user_login;
+    std::string userPassword = "zpr_haslo";
     std::stringstream statement;
-    statement <<  "Witaj, oto twój klucz api: " << apiKey << "\nNie podawaj go nikomu i nie odpowiadaj na ten mail.\n\nZ poważaniem,\nGrzegorz Florianowicz";
+    statement <<  "Witaj, oto twój klucz api: " << api_key << "\nNie podawaj go nikomu i nie odpowiadaj na ten mail.\n\nZ poważaniem,\nAdministrator";
     try
     {
-        MailRecipient recipient1( MailRecipient::PRIMARY_RECIPIENT, recipentAddress );
+        MailRecipient recipient( MailRecipient::PRIMARY_RECIPIENT, recipent_address );
        
         MailMessage message;
-        message.setRecipients( { recipient1 } );
+        message.setRecipients( { recipient } );
         message.setSubject( MailMessage::encodeWord( "Ściśle tajny klucz API od CEC2017-BlackBox-Ranking" ) );
         message.setContentType( "multipart/mixed; charset=utf-8;" );
-        message.setSender( senderAddress );
+        message.setSender( sender_address );
         message.addContent( new StringPartSource( statement.str() ) );
        
-        SecureSMTPClientSession session( smtpServerAddress );
+        SecureSMTPClientSession session( smtp_server_address );
         session.login();
         session.startTLS();
-        session.login( SMTPClientSession::AUTH_PLAIN, userLogin, userPassword );
+        session.login( SMTPClientSession::AUTH_PLAIN, user_login, userPassword );
         session.sendMessage( message );
         session.close();
         std::cout << "Mail sent";
@@ -98,7 +98,7 @@ void sendApiKey(const std::string& recipentAddress, const std::string& apiKey){
     }
 }
 
-std::unique_ptr<sql::ResultSet> getDatabaseResult(const std::string& request){
+std::unique_ptr<sql::ResultSet> get_database_result(const std::string& request){
         sql::Driver *driver;
         sql::Connection *connection;
         sql::Statement *statement;
@@ -133,7 +133,7 @@ std::string get_user_data(const int& id){
     try {
         std::stringstream ssreq;
         ssreq << "SELECT * FROM zpr_example_table where id = " << id;
-        std::unique_ptr<sql::ResultSet> database_request_result = getDatabaseResult(ssreq.str());
+        std::unique_ptr<sql::ResultSet> database_request_result = get_database_result(ssreq.str());
 
      if (database_request_result && database_request_result->next()) {
             // Pobieranie danych z wyniku zapytania
@@ -176,23 +176,10 @@ std::vector<double> parse_numbers_from_json(const std::string& json_data) {
     return numbers;
 }
 
-int parse_id_number_from_json(const std::string& json_data) {
-    int id_number = -1;
-    try {
-        boost::property_tree::ptree root;
-        std::istringstream json_stream(json_data);
-        boost::property_tree::read_json(json_stream, root);
-        
-        id_number = root.get_child("id").get_value<int>();
-        
-    } catch (const std::exception& e) {
-        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
-    }
-    return id_number;
-}
+
 
 template<typename T>
-T parseDataFromJson(const std::string& jsonData, const std::string& childKey){
+T parse_data_from_json(const std::string& jsonData, const std::string& childKey){
     T result;
     try {
         boost::property_tree::ptree root;
@@ -208,7 +195,7 @@ T parseDataFromJson(const std::string& jsonData, const std::string& childKey){
 }
 
 
-std::string generateHTTPResponse(const std::string& textResponse){
+std::string generate_HTTP_response(const std::string& textResponse){
     std::string response =  "HTTP/1.1 200 OK\r\n"
                             "Content-Type: text/plain\r\n"
                             "Content-Length: " + std::to_string(textResponse.length()) + "\r\n"
@@ -246,29 +233,29 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
         std::string response;
 
         if (method == "POST" && path == "/registrate") {
-            std::string mail = parseDataFromJson<std::string>(body, "mail");
+            std::string mail = parse_data_from_json<std::string>(body, "mail");
             std::cout << "Użytkownik o adresie mailowym " << mail <<" wyraża chęć rejestracji\n";
-            std::stringstream ssUsersTableRequest;
-            ssUsersTableRequest <<"SELECT COUNT(*) AS users_count FROM zpr_users_table WHERE mail = " << "'" << mail <<"'";
-            std::unique_ptr<sql::ResultSet> databaseRequestResult = getDatabaseResult(ssUsersTableRequest.str());
-            if (databaseRequestResult && databaseRequestResult->next()) {
-                int numOfUsersWithThatMail = databaseRequestResult->getInt("users_count");
-                std::cout << "tyle jest obecnie użytkowników o takim mailu " << numOfUsersWithThatMail << "\n";
-                if (numOfUsersWithThatMail != 0 )
+            std::stringstream ss_users_table_request;
+            ss_users_table_request <<"SELECT COUNT(*) AS users_count FROM zpr_users_table WHERE mail = " << "'" << mail <<"'";
+            std::unique_ptr<sql::ResultSet> database_request_result = get_database_result(ss_users_table_request.str());
+            if (database_request_result && database_request_result->next()) {
+                int num_of_users_with_that_mail = database_request_result->getInt("users_count");
+                std::cout << "tyle jest obecnie użytkowników o takim mailu " << num_of_users_with_that_mail << "\n";
+                if (num_of_users_with_that_mail != 0 )
                 {
-                    response = generateHTTPResponse("Istnieje użytkownik z takim adresem email (lub wystąpił jakiś błąd), nie możesz założyć konta\n");
+                    response = generate_HTTP_response("Istnieje użytkownik z takim adresem email (lub wystąpił jakiś błąd), nie możesz założyć konta\n");
                 }
                 else{
-                    response = generateHTTPResponse("Nie istnieje użytkownik z takim adresem email, więc możesz założyć konto. Na podany adres e-mail dostaniesz klucz api\n");
-                    std::string generatedApikey = generateRandomApiKey(20);
-                    sendApiKey(mail, generatedApikey);
-                    std::string hashedApiKey = hashApiKey(generatedApikey);
-                    std::cout << "Oto zahashowany klucz api: " << hashedApiKey << "\n";
+                    response = generate_HTTP_response("Nie istnieje użytkownik z takim adresem email, więc możesz założyć konto. Na podany adres e-mail dostaniesz klucz api\n");
+                    std::string generated_api_key = generate_random_api_key(20);
+                    send_api_key(mail, generated_api_key);
+                    std::string hashed_api_key = hash_api_key(generated_api_key);
+                    std::cout << "Oto zahashowany klucz api: " << hashed_api_key << "\n";
 
-                    std::stringstream ssAddUserToTable;
-                    ssAddUserToTable << "INSERT INTO zpr_users_table (mail, hashed_api_key, spend) VALUES " << "('"<<mail<<"', '"<<hashedApiKey<<"' ,"<<0<<");";
-                    std::cout << ssAddUserToTable.str()<<"\n";
-                    getDatabaseResult(ssAddUserToTable.str());
+                    std::stringstream ss_add_user_to_table;
+                    ss_add_user_to_table << "INSERT INTO zpr_users_table (mail, hashed_api_key, spend) VALUES " << "('"<<mail<<"', '"<<hashed_api_key<<"' ,"<<0<<");";
+                    std::cout << ss_add_user_to_table.str()<<"\n";
+                    get_database_result(ss_add_user_to_table.str());
 
                     std::cout << "Dodano użytkownika " <<mail<<" do tablicy z bazy danych\n";
                 }
@@ -299,28 +286,11 @@ void handle_client(std::shared_ptr<tcp::socket> socket) {
             std::cout << "Result: " << result << std::endl;
 
             // Prepare response
-            response = "HTTP/1.1 200 OK\r\n"
-                       "Content-Type: text/plain\r\n"
-                       "Content-Length: " + std::to_string(std::to_string(result).length()) + "\r\n"
-                       "Connection: close\r\n\r\n" +
-                       std::to_string(result);
-        } 
-        else if(method == "POST" && path == "/get_username") {
-            int id_number = parse_id_number_from_json(body);
-            std::cout << "Got 'get_username' request for id: " << id_number <<"\n";
-            std::string id_question_result = get_user_data(id_number);
-            response = "HTTP/1.1 200 OK\r\n"
-                       "Content-Type: text/plain\r\n"
-                       "Content-Length: " + std::to_string(id_question_result.length()) + "\r\n"
-                       "Connection: close\r\n\r\n" +
-                       id_question_result;
+            response = generate_HTTP_response(std::to_string(result));
+                       
         }
         else {
-            response = "HTTP/1.1 404 Not Found\r\n"
-                       "Content-Type: text/plain\r\n"
-                       "Content-Length: 13\r\n"
-                       "Connection: close\r\n\r\n"
-                       "404 Not Found";
+            response = generate_HTTP_response("404 Not Found");
         }
 
         // Sending the response
