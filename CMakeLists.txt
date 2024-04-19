@@ -54,3 +54,8 @@ target_link_libraries(main
     PocoJSON
     pthread
 )
+# Znajdź i załaduj bibliotekę Boost
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+
+# Dodaj folder z testami do projektu
+add_subdirectory(tests)
