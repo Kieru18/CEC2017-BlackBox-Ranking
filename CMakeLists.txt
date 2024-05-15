@@ -12,9 +12,6 @@ endif()
 # Ustawianie ścieżki do plików nagłówkowych MySQL C++ Connector
 include_directories(/usr/include/mysql/cppconn)
 
-file(GLOB SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc")          #Get all cpp files
-file(GLOB HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/headers/*.h")   #Get all header files
-
 set_property(GLOBAL PROPERTY CXX_STANDARD 20)
 set_property(GLOBAL PROPERTY CXX_STANDARD_REQUIRED ON)
 
@@ -36,12 +33,22 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(BoostAsio)
 
-add_executable(main main.cc ${SRC})
-target_link_libraries(main ${Boost_LIBRARIES})
+file(GLOB_RECURSE LIB_SRC "lib/src/*.cc" "lib/headers/*.h")
+target_link_libraries(LIB ${Boost_LIBRARIES} mysqlcppconn Poco::Net Poco::Foundation)
+add_library(LIB ${LIB_SRC})
+
+
+file(GLOB_RECURSE APP_SRC "app/*.cc" "app/*.h")
+add_executable(APP ${APP_SRC})
+
+
+target_link_libraries(APP LIB)
+target_link_libraries(APP ${Boost_LIBRARIES})
+
 
 # Dodanie opcji linkowania do biblioteki MySQL C++ Connector
-target_link_libraries(main ${Boost_LIBRARIES} mysqlcppconn Poco::Net Poco::Foundation)
+target_link_libraries(APP ${Boost_LIBRARIES} mysqlcppconn Poco::Net Poco::Foundation)
 
 # Dodatkowe opcje linkowania
-target_link_directories(main PRIVATE /usr/lib)  # Ścieżka do bibliotek linkujących (jeśli wymagane)
-target_link_libraries(main mysqlcppconn)         # Biblioteka do linkowania
+target_link_directories(APP PRIVATE /usr/lib)  # Ścieżka do bibliotek linkujących (jeśli wymagane)
+target_link_libraries(APP mysqlcppconn)         # Biblioteka do linkowania

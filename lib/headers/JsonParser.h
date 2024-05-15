@@ -7,6 +7,8 @@
 
 class JsonParser {
 public:
+    JsonParser() = default;
+    ~JsonParser() = default;
     int parse_id_number_from_json(const std::string& json_data);
     std::vector<double> parse_numbers_from_json(const std::string& json_data);
     template<typename T>

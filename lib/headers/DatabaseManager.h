@@ -9,6 +9,8 @@
 
 class DatabaseManager {
 public:
+    DatabaseManager() = default;
+    ~DatabaseManager() = default;
     std::unique_ptr<sql::ResultSet> getDatabaseResult(const std::string& request);
     std::string get_user_data(const int& id);
 };

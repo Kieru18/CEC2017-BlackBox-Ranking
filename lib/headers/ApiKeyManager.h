@@ -11,6 +11,8 @@
 
 class ApiKeyManager {
 public:
+    ApiKeyManager() = default;
+    ~ApiKeyManager() = default;
     std::string hashApiKey(const std::string& apiKey);
     std::string generateRandomApiKey(int length);
     void sendApiKey(const std::string& recipentAddress, const std::string& apiKey);
