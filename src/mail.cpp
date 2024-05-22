@@ -38,26 +38,26 @@ std::tuple<std::string, std::string, std::string> getMailCredentials(const std::
             server = mail_credentials["server"];
         }
         else{
-        std::cerr << "Mail server not found in credentials" << std::endl;
+            throw std::runtime_error("Mail server not found in credentials");
         }
 
         if (mail_credentials.find("address") != mail_credentials.end()) {
             address = mail_credentials["address"];
         }
         else{
-        std::cerr << "Mail address not found in credentials" << std::endl;
+            throw std::runtime_error("Mail address not found in credentials");
         }
 
         if (mail_credentials.find("password") != mail_credentials.end()) {
             password = mail_credentials["password"];
         }
         else{
-        std::cerr << "Mail password not found in credentials" << std::endl;
+            throw std::runtime_error("Mail password not found in credentials");
         }
     } 
     else 
     {
-        std::cerr << "Mail credentials not found in JSON" << std::endl;
+        throw std::runtime_error("Mail credentials not found in JSON");
     }
     return std::make_tuple(server, address, password);
 }
@@ -66,11 +66,13 @@ std::tuple<std::string, std::string, std::string> getMailCredentials(const std::
 
 void sendMail(const std::string& recipent_address, const std::string& subject, const std::string& content, const std::string& path)
 {
+    std::stringstream error_stream;
+
     try {
-        std::tuple<std::string, std::string, std::string> credentials = getMailCredentials(path);
-        std::string server_address = std::get<0>(credentials);
-        std::string sender_address = std::get<1>(credentials);
-        std::string sender_password = std::get<2>(credentials);
+        const std::tuple<std::string, std::string, std::string> credentials = getMailCredentials(path);
+        const std::string server_address = std::get<0>(credentials);
+        const std::string sender_address = std::get<1>(credentials);
+        const std::string sender_password = std::get<2>(credentials);
 
         Poco::Net::MailRecipient recipient( Poco::Net::MailRecipient::PRIMARY_RECIPIENT, recipent_address );
 
@@ -91,14 +93,16 @@ void sendMail(const std::string& recipent_address, const std::string& subject, c
         std::cout << "Mail sent\n";
     }
     catch( const Poco::Net::SMTPException & e ){
-        std::cerr << "Poco SMTPException: " << e.what() << ", message: " << e.message() << std::endl;
+
+        error_stream << "Poco SMTPException: " << e.what() << ", message: " << e.message();
     }
     catch( const Poco::Net::NetException & e ){
-        std::cerr << "Poco NetException error: " << e.what() << std::endl;
+        error_stream<< "Poco NetException error: " << e.what() << std::endl;
     }
     catch (const std::exception& e) {
-        std::cerr << "Sending mail error: " << e.what() << std::endl;
+        error_stream << "Sending mail error: " << e.what() << std::endl;
     }
-    
+    throw std::runtime_error(error_stream.str());
+
 }
 
