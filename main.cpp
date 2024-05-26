@@ -9,7 +9,7 @@
 
 int main() {
     try {
-        const std::string credentials_path = "../credentials.json";
+        const std::string credentials_path = "../bartosz_credentials.json";
 
         boost::asio::io_context io_context;
 

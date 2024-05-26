@@ -78,7 +78,7 @@ const std::tuple<std::string, std::string, std::string, std::string, std::string
 }
 
 const std::string getTableName(const std::string& path){
-       std::ifstream file(path);
+    std::ifstream file(path);
     if (!file.is_open()) {
         std::cerr << "Unable to open file" << std::endl;
     }   
@@ -92,8 +92,8 @@ const std::string getTableName(const std::string& path){
     if (data.find("database") != data.end()) {
         auto database_credentials = data["database"];
 
-        if (database_credentials.find("table_name") != database_credentials.end()) {
-            table_name = database_credentials["table_name"];
+        if (database_credentials.find("users_table_name") != database_credentials.end()) {
+            table_name = database_credentials["users_table_name"];
         }
         else{
             throw std::runtime_error("Table name not found in credentials");

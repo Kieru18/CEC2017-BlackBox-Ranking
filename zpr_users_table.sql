@@ -7,3 +7,7 @@ CREATE TABLE zpr_users_table (
     spend INT,
     PRIMARY KEY (mail(255))
 );
+CREATE TABLE zpr_request_table (
+    mail TEXT,
+    PRIMARY KEY (mail(255))
+);
