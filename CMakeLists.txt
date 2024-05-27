@@ -23,7 +23,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(BoostAsio)
 
-add_executable(main main.cpp src/mail.cpp src/db.cpp src/server.cpp ${SRC})
+add_executable(main main.cpp src/mail.cpp src/db.cpp src/server.cpp src/hash.cpp ${SRC})
 
 target_link_libraries(main ${Boost_LIBRARIES})
 
