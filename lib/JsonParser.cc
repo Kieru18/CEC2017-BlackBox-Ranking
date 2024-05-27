@@ -3,10 +3,10 @@
 #include <vector>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include "../headers/JsonParser.h"
+#include "JsonParser.h"
 
 
-int JsonParser::parse_id_number_from_json(const std::string& json_data) {
+int JsonParser::parseIdNumberFromJson(const std::string& json_data) {
     int id_number = -1;
     try {
         boost::property_tree::ptree root;
@@ -22,7 +22,7 @@ int JsonParser::parse_id_number_from_json(const std::string& json_data) {
 }
 
 // Function to parse numbers from a JSON string
-std::vector<double> JsonParser::parse_numbers_from_json(const std::string& json_data) {
+std::vector<double> JsonParser::parseNumbersFromJson(const std::string& json_data) {
     std::vector<double> numbers;
     try {
         boost::property_tree::ptree root;
@@ -39,7 +39,7 @@ std::vector<double> JsonParser::parse_numbers_from_json(const std::string& json_
 }
 
 template<typename T>
-T JsonParser::parseDataFromJson(const std::string& jsonData, const std::string& childKey){
+T JsonParser::parseDataFromJson(const std::string& jsonData, const std::string& childKey) {
     T result;
     try {
         boost::property_tree::ptree root;

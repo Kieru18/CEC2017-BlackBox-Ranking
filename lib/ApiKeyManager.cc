@@ -6,7 +6,7 @@
 #include <Poco/Net/StringPartSource.h>
 #include <Poco/Net/MailRecipient.h>
 #include <Poco/Net/NetException.h>
-#include "../headers/ApiKeyManager.h"
+#include "ApiKeyManager.h"
 
 using namespace Poco::Net;
 
@@ -75,3 +75,5 @@ void ApiKeyManager::sendApiKey(const std::string& recipentAddress, const std::st
         std::cerr << e.what() << std::endl;
     }
 }
+
+

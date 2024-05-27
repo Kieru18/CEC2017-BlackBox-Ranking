@@ -15,7 +15,7 @@
 #include <Poco/Net/StreamSocket.h>
 #include <Poco/Net/SocketAddress.h>
 
-#include "../lib/headers/HttpRequestHandler.h"
+#include "../lib/HttpRequestHandler.h"
 
 using boost::asio::ip::tcp;
 

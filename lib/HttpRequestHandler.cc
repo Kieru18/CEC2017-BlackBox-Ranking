@@ -5,11 +5,11 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <mysql_driver.h>
 #include <mysql_connection.h>
-#include "../headers/DatabaseManager.h"
-#include "../headers/JsonParser.h"
-#include "../headers/ApiKeyManager.h"
-#include "../headers/FunctionManager.h"
-#include "../headers/HttpRequestHandler.h"
+#include "DatabaseManager.h"
+#include "JsonParser.h"
+#include "ApiKeyManager.h"
+#include "FunctionManager.h"
+#include "HttpRequestHandler.h"
 
 using namespace Poco::Net;
 
@@ -85,7 +85,7 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
         }
         else if (method == "POST" && path == "/calculate") {
             // Parse JSON data
-            std::vector<double> numbers = jsonParser->parse_numbers_from_json(body);
+            std::vector<double> numbers = jsonParser->parseNumbersFromJson(body);
             std::string function_name = "unknown";
             try {
                 boost::property_tree::ptree root;
@@ -112,7 +112,7 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
                     std::to_string(result);
         } 
         else if(method == "POST" && path == "/get_username") {
-            int id_number = jsonParser->parse_id_number_from_json(body);
+            int id_number = jsonParser->parseIdNumberFromJson(body);
             std::cout << "Got 'get_username' request for id: " << id_number <<"\n";
             std::string id_question_result = dbManager->get_user_data(id_number);
             response = "HTTP/1.1 200 OK\r\n"

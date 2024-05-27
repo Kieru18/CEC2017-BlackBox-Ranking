@@ -1,7 +1,7 @@
 #include <string>
 #include <vector>
 #include <numeric>
-#include "../headers/FunctionManager.h"
+#include "FunctionManager.h"
 
 // Definition for perform_calculation function
 double FunctionManager::perform_calculation(const std::string& function, const std::vector<double>& numbers) {

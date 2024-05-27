@@ -19,7 +19,6 @@ set_property(GLOBAL PROPERTY CXX_STANDARD_REQUIRED ON)
 find_package(Boost 1.71 REQUIRED COMPONENTS system filesystem regex date_time chrono thread)
 find_package(Poco REQUIRED Net Foundation)
 
-
 # If Boost was found, link directories might be needed (depends on Boost and system setup)
 include_directories(${Boost_INCLUDE_DIRS})
 
@@ -33,22 +32,19 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(BoostAsio)
 
-file(GLOB_RECURSE LIB_SRC "lib/src/*.cc" "lib/headers/*.h")
-target_link_libraries(LIB ${Boost_LIBRARIES} mysqlcppconn Poco::Net Poco::Foundation)
-add_library(LIB ${LIB_SRC})
-
-
 file(GLOB_RECURSE APP_SRC "app/*.cc" "app/*.h")
 add_executable(APP ${APP_SRC})
+target_link_libraries(APP ${Boost_LIBRARIES} Poco::Net Poco::Foundation mysqlcppconn)
 
+file(GLOB_RECURSE LIB_SRC "lib/*.cc" "lib/*.h")
+add_library(LIB SHARED ${LIB_SRC})
+target_link_libraries(LIB ${Boost_LIBRARIES} Poco::Net Poco::Foundation mysqlcppconn)
 
 target_link_libraries(APP LIB)
-target_link_libraries(APP ${Boost_LIBRARIES})
 
 
-# Dodanie opcji linkowania do biblioteki MySQL C++ Connector
-target_link_libraries(APP ${Boost_LIBRARIES} mysqlcppconn Poco::Net Poco::Foundation)
 
-# Dodatkowe opcje linkowania
-target_link_directories(APP PRIVATE /usr/lib)  # Ścieżka do bibliotek linkujących (jeśli wymagane)
-target_link_libraries(APP mysqlcppconn)         # Biblioteka do linkowania
+
+
+
+target_link_directories(APP PRIVATE /usr/lib)

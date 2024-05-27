@@ -11,6 +11,11 @@
 #include "ApiKeyManager.h"
 #include "FunctionManager.h"
 #include <boost/asio.hpp>
+#include <Poco/Net/SecureSMTPClientSession.h>
+#include <Poco/Net/MailMessage.h>
+#include <Poco/Net/NetException.h>
+#include <Poco/Net/StringPartSource.h>
+#include <Poco/Net/FilePartSource.h>
 
 using namespace Poco::Net;
 

@@ -8,7 +8,6 @@
 #include <Poco/Net/MailRecipient.h>
 #include <Poco/Net/NetException.h>
 
-
 class ApiKeyManager {
 public:
     ApiKeyManager() = default;
