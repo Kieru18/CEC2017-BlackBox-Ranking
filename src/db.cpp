@@ -205,3 +205,10 @@ void deleteUserFromRequestTable(const std::string& mail_address, const std::stri
     ss_request_table_request <<"DELETE FROM " << request_table_name << " WHERE mail = '" << mail_address <<"';";
     makeDatabaseAction(ss_request_table_request.str(), path);
 }
+
+void resetSpendColumn(const std::string& path){
+    const std::string users_table_name = getTableName("users_table_name", path);
+    std::stringstream ss_users_table_request;
+    ss_users_table_request <<"UPDATE " << users_table_name << " SET spend = 0;";
+    makeDatabaseAction(ss_users_table_request.str(), path);
+}

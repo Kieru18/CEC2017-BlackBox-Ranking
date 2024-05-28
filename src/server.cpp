@@ -142,6 +142,14 @@ void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const st
             response = generateHttpTextResponse("Usuwasz z listy oczekujących na rejestrację użytkownika o mailu " + mail + " (jeśli wyraża chęć rejestracji)\n");
         }
 
+        if (method == "GET" && api_path == ("/"+hashed_gui_password+"/reset_spend")) {
+
+            resetSpendColumn(credentials_path);
+
+            std::cout << "Administrator resetuje ilość zużytych wywołań funkcji dla wszystkich użytkowników\n";
+
+            response = generateHttpTextResponse("Resetujesz ilość zużytych wywołań funkcji dla wszystkich użytkowników\n");
+        }
 
         else if (method == "GET" && api_path == "/admin_login_page"){
             std::stringstream html;
@@ -199,6 +207,21 @@ void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const st
                 </head>
                 <body>
                 <h1>Ściśle tajne</h1>
+                <button id="resetSpendButton" onclick = reset_spend() ">Resetuj wywołania funkcji dla wszystkich</button>
+                <script>
+                    async function reset_spend()
+                    {
+                        const hashed_gui_password = ")" << hashed_gui_password << R"(";
+                        const reset_spend_url = window.location.href.replace("/admin_page", "/"+hashed_gui_password+"/reset_spend");
+                        console.log(reset_spend_url);
+                            try {
+                            const response = await fetch(reset_spend_url, {
+                                method: 'GET',
+                            });
+                            } catch (e) {
+                                console.error('Fetch error:', e);
+                            }
+                    }
                 </script>
                 </body></html>
             )";
