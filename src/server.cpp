@@ -132,7 +132,7 @@ void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const st
             }
         }
 
-        if (method == "DELETE" && api_path == ("/"+hashed_gui_password+"/delete_from_request_table")) {
+        else if (method == "DELETE" && api_path == ("/"+hashed_gui_password+"/delete_from_request_table")) {
             std::string mail = parseDataFromJson<std::string>(body, "mail");
 
             deleteUserFromRequestTable(mail, credentials_path);
@@ -142,7 +142,7 @@ void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const st
             response = generateHttpTextResponse("Usuwasz z listy oczekujących na rejestrację użytkownika o mailu " + mail + " (jeśli wyraża chęć rejestracji)\n");
         }
 
-        if (method == "GET" && api_path == ("/"+hashed_gui_password+"/reset_spend")) {
+        else if (method == "GET" && api_path == ("/"+hashed_gui_password+"/reset_spend")) {
 
             resetSpendColumn(credentials_path);
 
@@ -207,8 +207,16 @@ void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const st
                 </head>
                 <body>
                 <h1>Ściśle tajne</h1>
-                <button id="resetSpendButton" onclick = reset_spend() ">Resetuj wywołania funkcji dla wszystkich</button>
+                <div style="display: flex; flex-direction: column; width: 25%; float: left;">
+                <button id="log_out_button" onclick = log_out() ">Wyloguj się</button>
+                <button id="reset_spend_button" onclick = reset_spend() ">Resetuj wywołania funkcji dla wszystkich</button>
+                </div>
                 <script>
+                    function log_out()
+                    {
+                        localStorage.removeItem('gui_password');
+                        window.location.pathname = 'admin_login_page';
+                    }
                     async function reset_spend()
                     {
                         const hashed_gui_password = ")" << hashed_gui_password << R"(";
@@ -222,6 +230,7 @@ void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const st
                                 console.error('Fetch error:', e);
                             }
                     }
+
                 </script>
                 </body></html>
             )";

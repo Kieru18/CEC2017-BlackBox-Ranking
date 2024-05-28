@@ -17,5 +17,5 @@ bool isUserRecordedInTable(const std::string& mail_address, const std::string& t
 void addUserToRequestTable(const std::string& mail_address, const std::string& path);
 void deleteUserFromRequestTable(const std::string& mail_address, const std::string& path);
 void resetSpendColumn(const std::string& path);
-
+std::vector<std::string> getUsersEmailsFromTable(const std::string& table_type, const std::string& path);
 #endif

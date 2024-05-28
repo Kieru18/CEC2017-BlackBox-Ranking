@@ -212,3 +212,25 @@ void resetSpendColumn(const std::string& path){
     ss_users_table_request <<"UPDATE " << users_table_name << " SET spend = 0;";
     makeDatabaseAction(ss_users_table_request.str(), path);
 }
+
+
+std::vector<std::string> getUsersEmailsFromTable(const std::string& table_type, const std::string& path){
+    std::vector<std::string> emails;
+    
+    std::stringstream error_stream;
+    const std::string table_name = getTableName(table_type, path);
+    std::stringstream ss_users_table_request;
+    ss_users_table_request << "SELECT mail FROM " << table_name << ";";
+    sql::ResultSet& db_response = getDatabaseResult(ss_users_table_request.str(), path);
+    
+    try {
+        while (db_response.next()) {
+            std::string email = db_response.getString("mail");
+            emails.push_back(email);
+        }
+    } catch (const std::exception& e) {
+        throw std::runtime_error(e.what());
+    }
+    
+    return emails;
+}
