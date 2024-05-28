@@ -1,5 +1,6 @@
 #include "server.h"
 #include "db.h"
+#include "hash.h"
 
 #include <boost/asio.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -81,11 +82,11 @@ const std::string generateHttpHtmlResponse(const std::string& text_response){
 
 void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string& credentials_path) {
 
-
     std::stringstream error_stream;
     try {
         
         const std::string gui_password = getGUIPassword(credentials_path);
+        const std::string hashed_gui_password = hashGivenString(gui_password);
 
         boost::asio::streambuf request;
         boost::system::error_code error;
@@ -113,17 +114,34 @@ void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const st
             std::string mail = parseDataFromJson<std::string>(body, "mail");
             std::cout << "Użytkownik o adresie mailowym " << mail <<" wyraża chęć rejestracji\n";
 
-            const bool is_user_registrated = isUserRegistratedInDatabase(mail, credentials_path);
-
-            if (is_user_registrated)
+            const bool is_user_already_registrated = isUserRecordedInTable(mail, "users_table_name", credentials_path);
+            const bool is_user_already_waiting_for_registration = isUserRecordedInTable(mail, "request_table_name", credentials_path);
+            if (is_user_already_registrated)
             {
-                response = generateHttpTextResponse("Istnieje użytkownik z takim adresem email (lub wystąpił jakiś błąd), nie możesz założyć konta\n");
+                response = generateHttpTextResponse("Istnieje użytkownik z takim adresem email, nie możesz założyć konta.\n");
+            }
+            else if (is_user_already_waiting_for_registration)
+            {
+                response = generateHttpTextResponse("Użytkownik z takim adresem email nadal czeka na akceptację.\n");
             }
             else
             {
-                response = generateHttpTextResponse("Nie istnieje użytkownik z takim adresem email, więc możesz założyć konto. Na podany adres e-mail dostaniesz klucz api (kiedyś)\n");
+                addUserToRequestTable(mail, credentials_path);
+                response = generateHttpTextResponse("Nie istnieje użytkownik z takim adresem email, więc możesz założyć konto. Na podany adres e-mail dostaniesz klucz api (kiedyś).\n");
+
             }
         }
+
+        if (method == "DELETE" && api_path == ("/"+hashed_gui_password+"/delete_from_request_table")) {
+            std::string mail = parseDataFromJson<std::string>(body, "mail");
+
+            deleteUserFromRequestTable(mail, credentials_path);
+
+            std::cout << "Administrator usuwa z listy oczekujących na rejestrację użytkownika o mailu " << mail <<" (jeśli wyraża chęć rejestracji)\n";
+
+            response = generateHttpTextResponse("Usuwasz z listy oczekujących na rejestrację użytkownika o mailu " + mail + " (jeśli wyraża chęć rejestracji)\n");
+        }
+
 
         else if (method == "GET" && api_path == "/admin_login_page"){
             std::stringstream html;
