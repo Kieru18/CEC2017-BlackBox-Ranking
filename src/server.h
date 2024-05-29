@@ -5,7 +5,8 @@
 #include <memory>
 #include <boost/asio.hpp>
 
-
+void getCallLimit(const std::string& path);
+void updateCallLimit(const std::string& path);
 template<typename T>
 T parseDataFromJson(const std::string& json_data, const std::string& child_key);
 

@@ -15,6 +15,53 @@
 
 int CALL_LIMIT = 0;
 
+void getCallLimit(const std::string& path){
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        std::cerr << "Unable to open file" << std::endl;
+    }   
+
+    nlohmann::json data;
+    file >> data;
+    file.close();
+
+    std::string gui_password;
+
+    if (data.find("call_limit") != data.end()) {
+        CALL_LIMIT = data["call_limit"];
+    } 
+    else 
+    {
+        throw std::runtime_error("Call limit credentials not found in JSON");
+    }
+}
+
+void updateCallLimit(const std::string& path) {
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        std::cerr << "Unable to open file" << std::endl;
+        return;
+    }
+
+    nlohmann::json data;
+    file >> data;
+    file.close();
+
+    // Aktualizacja wartości call_limit
+    data["call_limit"] = CALL_LIMIT;
+
+    // Zapisanie zmodyfikowanych danych z powrotem do pliku
+    std::ofstream outFile(path);
+    if (!outFile.is_open()) {
+        std::cerr << "Unable to open file for writing" << std::endl;
+        return;
+    }
+
+    outFile << std::setw(4) << data << std::endl;
+    outFile.close();
+}
+
+
 const std::string getGUIPassword(const std::string& path){
     std::ifstream file(path);
     if (!file.is_open()) {
@@ -106,7 +153,9 @@ const std::string createWaitingUsersHTMLList(const std::string& credentials_path
 
 
 void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string& credentials_path) {
-    //std::cout<<CALL_LIMIT<<"\n";
+
+    getCallLimit(credentials_path);
+
     std::stringstream error_stream;
     try {
         
@@ -212,6 +261,7 @@ void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const st
         else if (method == "PUT" && api_path == ("/"+hashed_gui_password+"/change_call_limit")) {
             const int new_limit = parseDataFromJson<int>(body, "new_limit");
             CALL_LIMIT = new_limit;
+            updateCallLimit(credentials_path);
             response = generateHttpTextResponse("Zmieniono limit wywołań funkcji na: " + std::to_string(new_limit) + "\n");
         }
 
@@ -252,6 +302,24 @@ void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const st
             )";
             response = generateHttpHtmlResponse(html.str());
         }
+        
+        else if (method == "GET" && api_path == "/"){
+            std::stringstream html;
+            html << R"(
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Strona admina Blackbox</title>
+                    <script>
+                        window.location.pathname = 'admin_page';
+                    </script>
+                </head>
+                <body>
+                </body>
+                </html>)";
+                response = generateHttpHtmlResponse(html.str());
+        }
 
         else if (method == "GET" && api_path == "/admin_page"){
             std::stringstream html;
@@ -272,7 +340,7 @@ void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const st
                 <h1>Ściśle tajne</h1>
                 <div style="display: flex; flex-direction: column; width: 25%; float: left;">
                 <button id="log_out_button" onclick = log_out()>Wyloguj się</button>
-                <label id="call_limit_label">Limit wywołań: 0</label>
+                <label id="call_limit_label">Limit wywołań: )" << CALL_LIMIT << R"(</label>
                 <div>
                 <p>Ustaw nowy limit wywołań funkcji</p>
                 <input type="number" id="call_limit_input" name="call_limit_input">
