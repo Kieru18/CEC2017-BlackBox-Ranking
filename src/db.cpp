@@ -198,11 +198,19 @@ void addUserToRequestTable(const std::string& mail_address, const std::string& p
     makeDatabaseAction(ss_request_table_request.str(), path);
 }
 
+void addUserToUsersTable(const std::string& mail_address, const std::string& hashed_api_key, const std::string& path)
+{
+    const std::string users_table_name = getTableName("users_table_name", path);
+    std::stringstream ss_users_table_request;
+    ss_users_table_request << "INSERT INTO " << users_table_name << " VALUES ('" << mail_address << "', '" << hashed_api_key << "', 0);";
+    makeDatabaseAction(ss_users_table_request.str(), path);
+}
+
 void deleteUserFromRequestTable(const std::string& mail_address, const std::string& path)
 {
     const std::string request_table_name = getTableName("request_table_name", path);
     std::stringstream ss_request_table_request;
-    ss_request_table_request <<"DELETE FROM " << request_table_name << " WHERE mail = '" << mail_address <<"';";
+    ss_request_table_request << "DELETE FROM " << request_table_name << " WHERE mail = '" << mail_address <<"';";
     makeDatabaseAction(ss_request_table_request.str(), path);
 }
 

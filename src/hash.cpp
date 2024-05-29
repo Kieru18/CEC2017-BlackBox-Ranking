@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <random>
+
 
 // Funkcja haszująca SHA-256 z użyciem nowego API OpenSSL
 const std::string hashGivenString(const std::string& text) {
@@ -38,4 +40,21 @@ const std::string hashGivenString(const std::string& text) {
         ss << std::setw(2) << static_cast<unsigned int>(hash[i]);
     }
     return ss.str();
+}
+
+const std::string generateApiKey(int api_key_lenght){
+
+    const std::string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_int_distribution<int> distribution(0, characters.size() - 1);
+
+    std::string api_key;
+
+    for (int i = 0; i < api_key_lenght; ++i) {
+        api_key += characters[distribution(generator)];
+    }
+
+    return api_key;
 }

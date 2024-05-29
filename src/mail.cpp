@@ -14,7 +14,16 @@
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
+#include <regex>
 
+
+bool isEmailValid(const std::string& email) {
+    // Wzorzec wyrażenia regularnego dla adresu e-mail
+    const std::regex pattern(R"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})");
+
+    // Sprawdzenie dopasowania wzorca do ciągu znaków
+    return std::regex_match(email, pattern);
+}
 
 std::tuple<std::string, std::string, std::string> getMailCredentials(const std::string& path)
 {
@@ -90,7 +99,7 @@ void sendMail(const std::string& recipent_address, const std::string& subject, c
         session.login(Poco::Net::SMTPClientSession::AUTH_PLAIN, sender_address, sender_password);
         session.sendMessage(message);
         session.close();
-        std::cout << "Mail sent\n";
+        std::cout << "Wysłano maila\n";
     }
     catch( const Poco::Net::SMTPException & e ){
 
@@ -106,3 +115,32 @@ void sendMail(const std::string& recipent_address, const std::string& subject, c
 
 }
 
+void sendRejectionMail(const std::string& recipent_address, const std::string& path)
+{
+    const std::string content = R"(
+        Szanowny Użytkowniku,
+        Z niezmierną przykrością musimy zawiadomić że nie zaakceptowano Państwa udziału w naszym eksluzywnym konkursie.
+        Życzymy powodzenia w aplikowaniu na następne edycje naszych prestiżowych zawodów.
+
+        Z poważaniem,
+        Administracja
+    )";
+    sendMail(recipent_address, "Odmowa zarejestrowania w konkursie", content, path);
+}
+
+void sendAcceptanceMail(const std::string& recipent_address, const std::string& api_key, const std::string& path)
+{
+    const std::string content = 
+        R"(
+        Szanowny Użytkowniku,
+        Zaakceptowano Państwa udział w naszym eksluzywnym konkursie.
+        Życzymy powodzenia, oto klucz API, złożony z )" + 
+        std::to_string(api_key.length()) + 
+        R"( znaków: )" + 
+        api_key + 
+        R"(
+        Z poważaniem,
+        Administracja
+        )";
+    sendMail(recipent_address, "Akceptacja rejestracji w konkursie", content, path);
+}

@@ -15,6 +15,7 @@ sql::ResultSet& getDatabaseResult(const std::string& request, const std::string&
 void makeDatabaseAction(const std::string& request, const std::string& path);
 bool isUserRecordedInTable(const std::string& mail_address, const std::string& table_type, const std::string& path);
 void addUserToRequestTable(const std::string& mail_address, const std::string& path);
+void addUserToUsersTable(const std::string& mail_address, const std::string& hashed_api_key, const std::string& path);
 void deleteUserFromRequestTable(const std::string& mail_address, const std::string& path);
 void resetSpendColumn(const std::string& path);
 std::vector<std::string> getUsersEmailsFromTable(const std::string& table_type, const std::string& path);
