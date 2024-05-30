@@ -3,7 +3,7 @@
 #include <numeric>
 #include "FunctionManager.h"
 
-// Definition for perform_calculation function
+// Definition for performCalculation function
 double FunctionManager::performCalculation(const std::string& function, const std::vector<double>& numbers) {
     if (function == "sum") {
         return std::accumulate(numbers.begin(), numbers.end(), 0.0);

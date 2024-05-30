@@ -100,7 +100,7 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
             std::cout << "JSON Data: " << body << std::endl;
 
             // Perform calculation based on function name
-            double result = functionManager->perform_calculation(function_name, numbers);
+            double result = functionManager->performCalculation(function_name, numbers);
 
             std::cout << "Result: " << result << std::endl;
 
@@ -114,7 +114,7 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
         else if(method == "POST" && path == "/get_username") {
             int id_number = jsonParser->parseIdNumberFromJson(body);
             std::cout << "Got 'get_username' request for id: " << id_number <<"\n";
-            std::string id_question_result = dbManager->get_user_data(id_number);
+            std::string id_question_result = dbManager->getUserData(id_number);
             response = "HTTP/1.1 200 OK\r\n"
                     "Content-Type: text/plain\r\n"
                     "Content-Length: " + std::to_string(id_question_result.length()) + "\r\n"
