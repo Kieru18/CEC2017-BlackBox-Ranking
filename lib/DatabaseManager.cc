@@ -29,7 +29,7 @@ std::unique_ptr<sql::ResultSet> DatabaseManager::getDatabaseResult(const std::st
     return nullptr;
 } 
 
-std::string DatabaseManager::get_user_data(const int& id) {
+std::string DatabaseManager::getUserData(const int& id) {
     try {
         std::stringstream ssreq;
         ssreq << "SELECT * FROM zpr_example_table where id = " << id;

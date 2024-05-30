@@ -6,7 +6,7 @@
 #include <mysql_driver.h>
 #include <mysql_connection.h>
 #include "DatabaseManager.h"
-#include "JsonParser.h"
+#include "JsonParser.hpp"
 #include "ApiKeyManager.h"
 #include "FunctionManager.h"
 #include "HttpRequestHandler.h"

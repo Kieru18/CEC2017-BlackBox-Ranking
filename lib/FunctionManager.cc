@@ -4,7 +4,7 @@
 #include "FunctionManager.h"
 
 // Definition for perform_calculation function
-double FunctionManager::perform_calculation(const std::string& function, const std::vector<double>& numbers) {
+double FunctionManager::performCalculation(const std::string& function, const std::vector<double>& numbers) {
     if (function == "sum") {
         return std::accumulate(numbers.begin(), numbers.end(), 0.0);
     } else if (function == "average") {

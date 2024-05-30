@@ -3,7 +3,7 @@
 #include <vector>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include "JsonParser.h"
+#include "JsonParser.hpp"
 
 
 int JsonParser::parseIdNumberFromJson(const std::string& json_data) {
@@ -36,20 +36,4 @@ std::vector<double> JsonParser::parseNumbersFromJson(const std::string& json_dat
         std::cerr << "Error parsing JSON: " << e.what() << std::endl;
     }
     return numbers;
-}
-
-template<typename T>
-T JsonParser::parseDataFromJson(const std::string& jsonData, const std::string& childKey) {
-    T result;
-    try {
-        boost::property_tree::ptree root;
-        std::istringstream jsonStream(jsonData);
-        boost::property_tree::read_json(jsonStream, root);
-        result = root.get_child(childKey).get_value<T>();
-        
-    } catch (const std::exception& e) {
-        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
-    }
-
-    return result;
 }
