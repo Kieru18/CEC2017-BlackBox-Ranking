@@ -9,7 +9,7 @@ else()
     add_compile_options(/W1)
 endif()
 
-# Ustawianie ścieżki do plików nagłówkowych MySQL C++ Connector
+# Setting the path to MySQL C++ Connector header files
 include_directories(/usr/include/mysql/cppconn)
 
 set_property(GLOBAL PROPERTY CXX_STANDARD 20)
@@ -17,34 +17,30 @@ set_property(GLOBAL PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Boost
 find_package(Boost 1.71 REQUIRED COMPONENTS system filesystem regex date_time chrono thread)
-find_package(Poco REQUIRED Net Foundation)
+find_package(Poco REQUIRED Net Foundation NetSSL)
 
 # If Boost was found, link directories might be needed (depends on Boost and system setup)
 include_directories(${Boost_INCLUDE_DIRS})
 
-# asio
+# Asio
 include(FetchContent)
-# set(BUILD_SHARED_LIBS OFF)
 FetchContent_Declare(
- BoostAsio
- GIT_REPOSITORY https://github.com/boostorg/asio.git
- GIT_TAG boost-1.77.0
+  BoostAsio
+  GIT_REPOSITORY https://github.com/boostorg/asio.git
+  GIT_TAG boost-1.77.0
 )
 FetchContent_MakeAvailable(BoostAsio)
 
-file(GLOB_RECURSE APP_SRC "app/*.cc" "app/*.h")
-add_executable(APP ${APP_SRC})
-target_link_libraries(APP ${Boost_LIBRARIES} Poco::Net Poco::Foundation mysqlcppconn)
+# Source files
+file(GLOB_RECURSE APP_SRC "app/*.cc" "app/*.h" "app/*.hpp")
+file(GLOB_RECURSE LIB_SRC "lib/*.cc" "lib/*.h" "lib/*.hpp")
 
-file(GLOB_RECURSE LIB_SRC "lib/*.cc" "lib/*.h")
+# Library
 add_library(LIB SHARED ${LIB_SRC})
-target_link_libraries(LIB ${Boost_LIBRARIES} Poco::Net Poco::Foundation mysqlcppconn)
+target_link_libraries(LIB ${Boost_LIBRARIES} Poco::Net Poco::Foundation Poco::NetSSL mysqlcppconn)
 
-target_link_libraries(APP LIB)
-
-
-
-
-
+# Executable
+add_executable(APP ${APP_SRC})
+target_link_libraries(APP ${Boost_LIBRARIES} Poco::Net Poco::Foundation Poco::NetSSL mysqlcppconn LIB)
 
 target_link_directories(APP PRIVATE /usr/lib)
