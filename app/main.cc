@@ -17,26 +17,25 @@
 
 #include "../lib/HttpRequestHandler.h"
 
-using boost::asio::ip::tcp;
-
-using namespace Poco::Net;
 
 int main() {
     try {
+        const std::string CREDENTIALS_PATH = "../credentials.json"; // this should be in config file?
+
         boost::asio::io_context io_context;
         
         std::shared_ptr<HttpRequestHandler> handler = std::make_shared<HttpRequestHandler>();
         
 
-        tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), 8080));
+        boost::asio::ip::tcp::acceptor acceptor(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), 8080));
         std::cout << "Server is listening on port 8080...\n";
 
         while (true) {
-            auto socket = std::make_shared<tcp::socket>(io_context);
+            auto socket = std::make_shared<boost::asio::ip::tcp::socket>(io_context);
             acceptor.accept(*socket);
 
-            std::thread([&handler, socket]() {
-                handler->handleClient(socket);
+            std::thread([&handler, socket, CREDENTIALS_PATH]() {
+                handler->handleClient(socket, CREDENTIALS_PATH);
             }).detach();
         }
     } catch (std::exception& e) {

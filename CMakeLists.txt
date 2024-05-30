@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
+cmake_policy(SET CMP0135 NEW)
 project(BlackBoxRanking)
 
 
@@ -10,13 +11,11 @@ else()
     add_compile_options(/W1)
 endif()
 
-# Setting the path to MySQL C++ Connector header files
-include_directories(/usr/include/mysql/cppconn)
 
 set_property(GLOBAL PROPERTY CXX_STANDARD 20)
 set_property(GLOBAL PROPERTY CXX_STANDARD_REQUIRED ON)
 
-
+# Boost
 find_package(Boost 1.71 REQUIRED COMPONENTS system filesystem regex date_time chrono thread)
 find_package(Poco REQUIRED Net Foundation NetSSL)
 
@@ -31,16 +30,18 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(BoostAsio)
 
-# Source files
+# nlohmann json
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
+FetchContent_MakeAvailable(json)
+
+
 file(GLOB_RECURSE APP_SRC "app/*.cc" "app/*.h" "app/*.hpp")
 file(GLOB_RECURSE LIB_SRC "lib/*.cc" "lib/*.h" "lib/*.hpp")
 
-# Library
 add_library(LIB SHARED ${LIB_SRC})
-target_link_libraries(LIB ${Boost_LIBRARIES} Poco::Net Poco::Foundation Poco::NetSSL mysqlcppconn)
+target_link_libraries(LIB ${Boost_LIBRARIES} Poco::Net Poco::Foundation Poco::NetSSL mysqlcppconn nlohmann_json::nlohmann_json)
 
-# Executable
 add_executable(APP ${APP_SRC})
-target_link_libraries(APP ${Boost_LIBRARIES} Poco::Net Poco::Foundation Poco::NetSSL mysqlcppconn LIB)
+target_link_libraries(APP ${Boost_LIBRARIES} Poco::Net Poco::Foundation Poco::NetSSL mysqlcppconn nlohmann_json::nlohmann_json LIB)
 
 target_link_directories(APP PRIVATE /usr/lib)

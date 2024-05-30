@@ -1,23 +1,15 @@
 #pragma once
-#include <iostream>
-#include <sstream>
+
+#include <string>
+#include <memory>
 #include <boost/asio.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <mysql_driver.h>
-#include <mysql_connection.h>
+
 #include "DatabaseManager.h"
 #include "JsonParser.hpp"
 #include "ApiKeyManager.h"
 #include "FunctionManager.h"
-#include <boost/asio.hpp>
-#include <Poco/Net/SecureSMTPClientSession.h>
-#include <Poco/Net/MailMessage.h>
-#include <Poco/Net/NetException.h>
-#include <Poco/Net/StringPartSource.h>
-#include <Poco/Net/FilePartSource.h>
+#include "MailManager.h"
 
-using namespace Poco::Net;
 
 class HttpRequestHandler {
 private:
@@ -25,15 +17,26 @@ private:
     std::unique_ptr<JsonParser> jsonParser;
     std::unique_ptr<ApiKeyManager> apiKeyManager;
     std::unique_ptr<FunctionManager> functionManager;
+    std::unique_ptr<MailManager> mailManager;
+    int call_limit_;
 
-    std::string generateHTTPResponse(const std::string& textResponse);
+    const std::string generateHttpTextResponse(const std::string& text_response);
+    const std::string generateHttpHtmlResponse(const std::string& text_response);
+
+    void getCallLimit(const std::string& path);
+    void updateCallLimit(const std::string& path);
+
+    const std::string getGUIPassword(const std::string& path);
+    const std::string createWaitingUsersHTMLList(const std::string& credentials_path);
+
 
 public:
     HttpRequestHandler() 
         : dbManager(std::make_unique<DatabaseManager>()),
           jsonParser(std::make_unique<JsonParser>()),
           apiKeyManager(std::make_unique<ApiKeyManager>()),
-          functionManager(std::make_unique<FunctionManager>()) {}
+          functionManager(std::make_unique<FunctionManager>()),
+          call_limit_(0) {}
 
-    void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket);
+    void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string& credentials_path);
 };
