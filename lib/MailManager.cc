@@ -83,7 +83,7 @@ void MailManager::sendMail(const std::string& recipent_address, const std::strin
 
         message.setRecipients({recipient});
         message.setSubject(Poco::Net::MailMessage::encodeWord(subject));
-        message.setContentType("multipart/mixed; charset=utf-8;");
+        message.setContentType("multipart/mixed; charset=utf-16;");
         message.setSender(sender_address);
         message.addContent(new Poco::Net::StringPartSource(content));
 
