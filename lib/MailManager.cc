@@ -82,10 +82,10 @@ void MailManager::sendMail(const std::string& recipent_address, const std::strin
         Poco::Net::MailMessage message;
 
         message.setRecipients({recipient});
-        message.setSubject(Poco::Net::MailMessage::encodeWord(subject));
-        message.setContentType("multipart/mixed; charset=utf-16;");
+        message.setSubject(Poco::Net::MailMessage::encodeWord(subject, "UTF-8"));
+        message.setContentType("text/plain; charset=UTF-8");
         message.setSender(sender_address);
-        message.addContent(new Poco::Net::StringPartSource(content));
+        message.addContent(new Poco::Net::StringPartSource(content, "text/plain; charset=UTF-8"));
 
         Poco::Net::SecureSMTPClientSession session( server_address );
         session.login();
