@@ -18,13 +18,13 @@ private:
     std::unique_ptr<ApiKeyManager> apiKeyManager;
     std::unique_ptr<FunctionManager> functionManager;
     std::unique_ptr<MailManager> mailManager;
-    int call_limit_;
+    int max_eval_call_limit_;
 
     const std::string generateHttpTextResponse(const std::string& text_response);
     const std::string generateHttpHtmlResponse(const std::string& text_response);
 
-    void getCallLimit(const std::string& path);
-    void updateCallLimit(const std::string& path);
+    void getMaxEvalCallLimit(const std::string& path);
+    void updateMaxEvalCallLimit(const std::string& path);
 
     const std::string getGUIPassword(const std::string& path);
     const std::string createWaitingUsersHTMLList(const std::string& credentials_path);
@@ -36,7 +36,7 @@ public:
           jsonParser(std::make_unique<JsonParser>()),
           apiKeyManager(std::make_unique<ApiKeyManager>()),
           functionManager(std::make_unique<FunctionManager>()),
-          call_limit_(0) {}
+          max_eval_call_limit_(0) {}
 
     void handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string& credentials_path);
 };

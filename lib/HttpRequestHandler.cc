@@ -17,7 +17,7 @@
 #include "HttpRequestHandler.h"
 
 
-void HttpRequestHandler::getCallLimit(const std::string& path) {
+void HttpRequestHandler::getMaxEvalCallLimit(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
         std::cerr << "Unable to open file" << std::endl;
@@ -29,8 +29,8 @@ void HttpRequestHandler::getCallLimit(const std::string& path) {
 
     std::string gui_password;
 
-    if (data.find("call_limit") != data.end()) {
-        call_limit_ = data["call_limit"];
+    if (data.find("max_eval_call_limit") != data.end()) {
+        max_eval_call_limit_ = data["max_eval_call_limit"];
     } 
     else 
     {
@@ -38,7 +38,7 @@ void HttpRequestHandler::getCallLimit(const std::string& path) {
     }
 }
 
-void HttpRequestHandler::updateCallLimit(const std::string& path) {
+void HttpRequestHandler::updateMaxEvalCallLimit(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
         std::cerr << "Unable to open file" << std::endl;
@@ -49,8 +49,8 @@ void HttpRequestHandler::updateCallLimit(const std::string& path) {
     file >> data;
     file.close();
 
-    // Aktualizacja wartości call_limit
-    data["call_limit"] = call_limit_;
+    // Aktualizacja wartości max_eval_call_limit
+    data["max_eval_call_limit"] = max_eval_call_limit_;
 
     // Zapisanie zmodyfikowanych danych z powrotem do pliku
     std::ofstream outFile(path);
@@ -137,7 +137,7 @@ const std::string HttpRequestHandler::createWaitingUsersHTMLList(const std::stri
 
 void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string& credentials_path) {
 
-    getCallLimit(credentials_path);
+    getMaxEvalCallLimit(credentials_path);
 
     std::stringstream error_stream;
     try {
@@ -241,10 +241,10 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
             response = generateHttpTextResponse("Resetujesz ilość zużytych wywołań funkcji dla wszystkich użytkowników\n");
         }
 
-        else if (method == "PUT" && api_path == ("/"+hashed_gui_password+"/change_call_limit")) {
+        else if (method == "PUT" && api_path == ("/"+hashed_gui_password+"/change_max_eval_call_limit")) {
             const int new_limit = jsonParser->parseDataFromJson<int>(body, "new_limit");
-            call_limit_ = new_limit;
-            updateCallLimit(credentials_path);
+            max_eval_call_limit_ = new_limit;
+            updateMaxEvalCallLimit(credentials_path);
             response = generateHttpTextResponse("Zmieniono limit wywołań funkcji na: " + std::to_string(new_limit) + "\n");
         }
 
@@ -323,11 +323,11 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
                 <h1>Ściśle tajne</h1>
                 <div style="display: flex; flex-direction: column; width: 25%; float: left;">
                 <button id="log_out_button" onclick = log_out()>Wyloguj się</button>
-                <label id="call_limit_label">Limit wywołań: )" << call_limit_ << R"(</label>
+                <label id="max_eval_call_limit_label">Limit wywołań: )" << max_eval_call_limit_ << R"(</label>
                 <div>
                 <p>Ustaw nowy limit wywołań funkcji</p>
-                <input type="number" id="call_limit_input" name="call_limit_input">
-                <button type="button" id="call_limit_button" onclick = set_call_limit()>Zatwierdź nowy limit</button>
+                <input type="number" id="max_eval_call_limit_input" name="max_eval_call_limit_input">
+                <button type="button" id="max_eval_call_limit_button" onclick = set_max_eval_call_limit()>Zatwierdź nowy limit</button>
                 </div>
                 <button id="reset_spend_button" onclick = reset_spend()>Resetuj wywołania funkcji dla wszystkich zarejestrowanych użytkowników</button>
                 <h2>Lista kandydatów chcących wziąć udział w konkursie</h2>
@@ -339,9 +339,9 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
                         localStorage.removeItem('gui_password');
                         window.location.pathname = 'admin_login_page';
                     }
-                    async function set_call_limit()
+                    async function set_max_eval_call_limit()
                     {
-                        let limit = document.getElementById("call_limit_input").value;
+                        let limit = document.getElementById("max_eval_call_limit_input").value;
                         let limit_num = parseInt(limit);
 
                         if (isNaN(limit_num)) {
@@ -352,16 +352,16 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
                             alert("Limit wywołań funkcji musi być nieujemny! Wprowadź nową wartość.");
                         } else {
                             const hashed_gui_password = ")" << hashed_gui_password << R"(";
-                            const change_call_limit_url = window.location.href.replace("/admin_page", "/"+hashed_gui_password+"/change_call_limit");
+                            const change_max_eval_call_limit_url = window.location.href.replace("/admin_page", "/"+hashed_gui_password+"/change_max_eval_call_limit");
                             try {
-                                await fetch(change_call_limit_url, {
+                                await fetch(change_max_eval_call_limit_url, {
                                     method: 'PUT',
                                     headers: {
                                         'Content-Type': 'application/json'
                                     },
                                     body: JSON.stringify({ new_limit: limit_num }),
                                 });
-                                document.getElementById("call_limit_label").textContent = "Limit wywołań: " + limit_num.toString(); 
+                                document.getElementById("max_eval_call_limit_label").textContent = "Limit wywołań: " + limit_num.toString(); 
                             } catch (e) {
                             console.error('Fetch error:', e);
                             }
