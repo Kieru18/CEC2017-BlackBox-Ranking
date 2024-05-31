@@ -82,10 +82,10 @@ void MailManager::sendMail(const std::string& recipent_address, const std::strin
         Poco::Net::MailMessage message;
 
         message.setRecipients({recipient});
-        message.setSubject(Poco::Net::MailMessage::encodeWord(subject));
-        message.setContentType("multipart/mixed; charset=utf-8;");
+        message.setSubject(Poco::Net::MailMessage::encodeWord(subject, "UTF-8"));
+        message.setContentType("text/plain; charset=UTF-8");
         message.setSender(sender_address);
-        message.addContent(new Poco::Net::StringPartSource(content));
+        message.addContent(new Poco::Net::StringPartSource(content, "text/plain; charset=UTF-8"));
 
         Poco::Net::SecureSMTPClientSession session( server_address );
         session.login();
@@ -113,7 +113,7 @@ void MailManager::sendRejectionMail(const std::string& recipent_address, const s
 {
     const std::string content = R"(
         Szanowny Użytkowniku,
-        Z niezmierną przykrością musimy zawiadomić że nie zaakceptowano Państwa udziału w naszym eksluzywnym konkursie.
+        Z niezmierną przykrością musimy zawiadomić że nie zaakceptowano Twojego udziału w naszym eksluzywnym konkursie.
         Życzymy powodzenia w aplikowaniu na następne edycje naszych prestiżowych zawodów.
 
         Z poważaniem,
@@ -127,7 +127,7 @@ void MailManager::sendAcceptanceMail(const std::string& recipent_address, const 
     const std::string content = 
         R"(
         Szanowny Użytkowniku,
-        Zaakceptowano Państwa udział w naszym eksluzywnym konkursie.
+        Zaakceptowano Twój udział w naszym eksluzywnym konkursie.
         Życzymy powodzenia, oto klucz API, złożony z )" + 
         std::to_string(api_key.length()) + 
         R"( znaków: )" + 
