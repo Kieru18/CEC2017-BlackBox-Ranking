@@ -4,6 +4,7 @@
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
+#include <memory>
 
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
@@ -106,15 +107,16 @@ sql::ResultSet& DatabaseManager::getDatabaseResult(const std::string& request, c
     const std::string password = std::get<2>(credentials);
     const std::string db_name = std::get<3>(credentials);
 
-    sql::Driver *driver;
-    sql::Connection *connection;
-    sql::Statement *statement;
+    sql::Driver* driver;
+    std::unique_ptr<sql::Connection> connection;
+    std::unique_ptr<sql::Statement> statement;
 
     try {
         driver = get_driver_instance();
-        connection = driver->connect(conn_address, username, password);
+
+        connection = std::unique_ptr<sql::Connection>(driver->connect(conn_address, username, password));
         connection->setSchema(db_name);
-        statement = connection->createStatement();
+        statement = std::unique_ptr<sql::Statement>(connection->createStatement());
         return *(statement->executeQuery(request));
     }
 
@@ -132,18 +134,16 @@ void DatabaseManager::makeDatabaseAction(const std::string& request, const std::
     const std::string password = std::get<2>(credentials);
     const std::string db_name = std::get<3>(credentials);
 
-    sql::Driver *driver;
-    sql::Connection *connection;
-    sql::Statement *statement;
-
+    sql::Driver* driver;
+    std::unique_ptr<sql::Connection> connection;
+    std::unique_ptr<sql::Statement> statement;
     try {
         driver = get_driver_instance();
-        connection = driver->connect(conn_address, username, password);
+        connection = std::unique_ptr<sql::Connection>(driver->connect(conn_address, username, password));
         connection->setSchema(db_name);
-        statement = connection->createStatement();
+        statement = std::unique_ptr<sql::Statement>(connection->createStatement());
         statement->execute(request);
-        delete statement;
-        delete connection;
+
     }
 
     catch (const sql::SQLException &e) {
