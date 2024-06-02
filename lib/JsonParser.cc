@@ -21,19 +21,39 @@ int JsonParser::parseIdNumberFromJson(const std::string& json_data) {
     return id_number;
 }
 
-// Function to parse numbers from a JSON string
-std::vector<double> JsonParser::parseNumbersFromJson(const std::string& json_data) {
-    std::vector<double> numbers;
+std::vector<std::vector<double>> JsonParser::parsePopulationFromJson(const std::string& json_data) {
+    std::vector<std::vector<double>> result;
     try {
         boost::property_tree::ptree root;
         std::istringstream json_stream(json_data);
         boost::property_tree::read_json(json_stream, root);
         
-        for (const auto& item : root.get_child("numbers")) {
-            numbers.push_back(item.second.get_value<double>());
+        for (const auto& population : root.get_child("population")) {
+            std::vector<double> individual;
+            for (const auto& item : population.second) {
+                individual.push_back(item.second.get_value<double>());
+            }
+            result.push_back(individual);
         }
     } catch (const std::exception& e) {
         std::cerr << "Error parsing JSON: " << e.what() << std::endl;
     }
-    return numbers;
+    return result;
+}
+
+
+std::vector<double> JsonParser::parseSpecimenFromJson(const std::string& json_data) {
+    std::vector<double> specimen;
+    try {
+        boost::property_tree::ptree root;
+        std::istringstream json_stream(json_data);
+        boost::property_tree::read_json(json_stream, root);
+        
+        for (const auto& item : root.get_child("specimen")) {
+            specimen.push_back(item.second.get_value<double>());
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
+    }
+    return specimen;
 }

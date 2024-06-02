@@ -7,5 +7,6 @@ class FunctionManager {
 public:
     FunctionManager() = default;
     ~FunctionManager() = default;
-    double performCalculation(const std::string& function, const std::vector<double>& numbers);
+    double getFunctionResults(const int function_number, const std::vector<double>& specimen);
+    std::vector<double> getFunctionResults(const int function_number, const std::vector<std::vector<double>>& population);
 };

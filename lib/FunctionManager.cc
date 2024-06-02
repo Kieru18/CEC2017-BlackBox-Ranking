@@ -1,17 +1,24 @@
 #include <string>
 #include <vector>
 #include <numeric>
+
+#include "../cec_codes/cec17_test_func.h"
+
 #include "FunctionManager.h"
 
-// Definition for performCalculation function
-double FunctionManager::performCalculation(const std::string& function, const std::vector<double>& numbers) {
-    if (function == "sum") {
-        return std::accumulate(numbers.begin(), numbers.end(), 0.0);
-    } else if (function == "average") {
-        if (!numbers.empty()) {
-            return std::accumulate(numbers.begin(), numbers.end(), 0.0) / numbers.size();
-        }
-    }
+double FunctionManager::getFunctionResults(const int function_number, const std::vector<double>& specimen) {
+    double* x = new double[specimen.size()];
+    std::copy(specimen.begin(), specimen.end(), x);
+    double* f = new double[1];
+    cec17_test_func(x, f, specimen.size(), 1, function_number);
+    delete[] x;
+    return f[0];
+}
 
-    return 2137; // Arbitrary number for unknown functions or empty list
+std::vector<double> FunctionManager::getFunctionResults(const int function_number, const std::vector<std::vector<double>>& population) {
+    std::vector<double> results;
+    for (const auto& specimen : population) {
+        results.push_back(getFunctionResults(function_number, specimen));
+    }
+    return results;
 }

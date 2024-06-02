@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-#cmake_policy(SET CMP0135 NEW)
+cmake_policy(SET CMP0135 NEW)
 project(BlackBoxRanking)
 
 
@@ -36,7 +36,7 @@ FetchContent_MakeAvailable(json)
 
 
 file(GLOB_RECURSE APP_SRC "app/*.cc" "app/*.h" "app/*.hpp")
-file(GLOB_RECURSE LIB_SRC "lib/*.cc" "lib/*.h" "lib/*.hpp")
+file(GLOB_RECURSE LIB_SRC "lib/*.cc" "lib/*.h" "lib/*.hpp" "cec_codes/*.h" "cec_codes/*.cpp")
 
 add_library(LIB SHARED ${LIB_SRC})
 target_link_libraries(LIB ${Boost_LIBRARIES} Poco::Net Poco::Foundation Poco::NetSSL mysqlcppconn nlohmann_json::nlohmann_json)

@@ -11,8 +11,12 @@ public:
     ~JsonParser() = default;
     int parseIdNumberFromJson(const std::string& json_data);
     std::vector<double> parseNumbersFromJson(const std::string& json_data);
+    
     template<typename T>
     T parseDataFromJson(const std::string& jsonData, const std::string& childKey);
+
+    std::vector<std::vector<double>> parsePopulationFromJson(const std::string& json_data);
+    std::vector<double> parseSpecimenFromJson(const std::string& json_data);
 };
 
 template<typename T>

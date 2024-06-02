@@ -420,6 +420,27 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
             response = generateHttpHtmlResponse(html.str());
         }
 
+        //@TODO verify if user is registered, check call limit, check if function exists
+        else if (method == "GET" && api_path == "/evaluate") {
+            const std::string function_number = jsonParser->parseDataFromJson<std::string>(body, "function_number");
+            const std::vector<double> specimen = jsonParser->parseSpecimenFromJson(body);
+            const double result = functionManager->getFunctionResults(std::stoi(function_number), specimen);
+            response = generateHttpTextResponse(std::to_string(result));
+        }
+
+        else if (method == "GET" && api_path == "/evaluate_population") {
+            const std::string function_number = jsonParser->parseDataFromJson<std::string>(body, "function_number");
+            const std::vector<std::vector<double>> population = jsonParser->parsePopulationFromJson(body);
+            const std::vector<double> results = functionManager->getFunctionResults(std::stoi(function_number), population);
+            std::string results_string;
+            for (const double result : results) {
+                results_string += std::to_string(result) + " ";
+            }
+            results_string = results_string.substr(0, results_string.size() - 1);
+            response = generateHttpTextResponse(results_string);
+        }
+       
+        
         else {
             response = generateHttpTextResponse("404 Not Found");
         }

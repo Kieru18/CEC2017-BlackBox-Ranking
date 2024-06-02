@@ -10,6 +10,8 @@
 
 
 class DatabaseManager {
+private:
+    const static std::unordered_map<std::string, int> function_name_to_case;
 public:
     DatabaseManager() = default;
     ~DatabaseManager() = default;
