@@ -12,7 +12,9 @@ double FunctionManager::getFunctionResults(const int function_number, const std:
     double* f = new double[1];
     cec17_test_func(x, f, specimen.size(), 1, function_number);
     delete[] x;
-    return f[0];
+    double result = f[0];
+    delete[] f;
+    return result;
 }
 
 std::vector<double> FunctionManager::getFunctionResults(const int function_number, const std::vector<std::vector<double>>& population) {
