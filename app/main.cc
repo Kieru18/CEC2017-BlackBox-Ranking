@@ -20,7 +20,7 @@
 
 int main() {
     try {
-        const std::string CREDENTIALS_PATH = "../credentials.json"; // this should be in config file?
+        const std::string CREDENTIALS_PATH = "credentials.json"; // this should be in config file?
 
         boost::asio::io_context io_context;
         
