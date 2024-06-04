@@ -141,11 +141,11 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
 
     std::stringstream error_stream;
     try {
-        
+                
         const std::string gui_password = getGUIPassword(credentials_path);
         const std::string hashed_gui_password = apiKeyManager->hashGivenString(gui_password);
 
-        boost::asio::streambuf request;
+        boost::asio::streambuf request(8192);
         boost::system::error_code error;
         boost::asio::read_until(*socket, request, "\r\n\r\n", error);
 
@@ -160,12 +160,46 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
         request_line_stream >> method >> api_path;
 
         std::string line;
+        std::size_t content_length = 0;
 
-        while (std::getline(request_stream, line) && line != "\r") {}
+        while (std::getline(request_stream, line) && line != "\r") {
+            std::istringstream header_line_stream(line);
+            std::string header_name;
+            header_line_stream >> header_name;
+            if (header_name == "Content-Length:") {
+                header_line_stream >> content_length;
+            }
+        }
+        std::cout << "Finished reading headers\n";
 
-        std::string body(std::istreambuf_iterator<char>(request_stream), {});
+        // Read the body based on Content-Length
+        std::string body;
+        if (content_length > 0) {
+            std::cout << "Reading body of size " << content_length << "\n";
+            std::vector<char> body_data(content_length);
+
+            // Read any remaining part of the body from the initial request buffer
+            std::size_t bytes_remaining = request.size();
+            if (bytes_remaining > 0) {
+                std::istreambuf_iterator<char> begin(&request), end;
+                std::string remaining_body_part(begin, end);
+                body += remaining_body_part;
+            }
+
+            // Read the rest of the body directly from the socket
+            std::size_t bytes_to_read = content_length - body.size();
+            if (bytes_to_read > 0) {
+                boost::asio::mutable_buffers_1 buffer = boost::asio::buffer(body_data.data(), bytes_to_read);
+                std::size_t bytes_read = socket->read_some(buffer, error);
+                body.append(body_data.data(), bytes_read);
+            }
+        }
+
+        std::cout << "BODY\n" << body << "\n";
 
         std::string response;
+
+
 
         if (method == "POST" && api_path == "/registrate") {
             
@@ -420,18 +454,50 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
             response = generateHttpHtmlResponse(html.str());
         }
 
+        else if(method == "POST" && api_path == "/verify_api_key") {
+            const std::string mail = jsonParser->parseDataFromJson<std::string>(body, "mail");
+            const std::string api_key = jsonParser->parseDataFromJson<std::string>(body, "api_key");
+            bool isUserRegistrated = dbManager->isUserRecordedInTable(mail, "users_table_name", credentials_path);
+            bool isPasswordOk = false;
+            if (isUserRegistrated){
+                isPasswordOk = dbManager->isPasswordCorrect(mail, api_key, credentials_path);
+            }
+            if (isUserRegistrated && isPasswordOk) {
+                response = generateHttpTextResponse("Mail i klucz API są poprawne");
+            }
+            else if(!isUserRegistrated) 
+            {
+                response = generateHttpTextResponse("Użytkownik o takim adresie email nie jest zarejestrowany");
+            }
+            else {
+                response = generateHttpTextResponse("Klucz API jest niepoprawny");
+            }
+        }
+
         //@TODO verify if user is registered, check call limit, check if function exists
         else if (method == "POST" && api_path == "/evaluate") {
-            const std::string function_number = jsonParser->parseDataFromJson<std::string>(body, "function_number");
+            /*const std::string mail = jsonParser->parseDataFromJson<std::string>(body, "mail");
+            const std::string api_key = jsonParser->parseDataFromJson<std::string>(body, "api_key");
+            bool isUserRegistrated = dbManager->isUserRecordedInTable(mail, "users_table_name", credentials_path);
+            bool isPasswordOk = false;
+            //bool isEnoughToSpend = false;
+            if (isUserRegistrated){
+                isPasswordOk = dbManager->isPasswordCorrect(mail, api_key, credentials_path);
+            }
+            if (isUserRegistrated && isPasswordOk) {
+                response = generateHttpTextResponse("Mail i klucz API są poprawne");
+            }*/
+
+            const int function_number = jsonParser->parseDataFromJson<int>(body, "function_number");
             const std::vector<double> specimen = jsonParser->parseSpecimenFromJson(body);
-            const double result = functionManager->getFunctionResults(std::stoi(function_number), specimen);
+            const double result = functionManager->getFunctionResults(function_number, specimen);
             response = generateHttpTextResponse(std::to_string(result));
         }
 
         else if (method == "POST" && api_path == "/evaluate_population") {
-            const std::string function_number = jsonParser->parseDataFromJson<std::string>(body, "function_number");
+            const int function_number = jsonParser->parseDataFromJson<int>(body, "function_number");
             const std::vector<std::vector<double>> population = jsonParser->parsePopulationFromJson(body);
-            const std::vector<double> results = functionManager->getFunctionResults(std::stoi(function_number), population);
+            const std::vector<double> results = functionManager->getFunctionResults(function_number, population);
             std::string results_string;
             for (const double result : results) {
                 results_string += std::to_string(result) + " ";

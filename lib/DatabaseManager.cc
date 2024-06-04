@@ -13,7 +13,7 @@
 #include <nlohmann/json.hpp>
 
 #include "DatabaseManager.h"
-
+#include "ApiKeyManager.h"
 
 const std::tuple<std::string, std::string, std::string, std::string> DatabaseManager::getDatabaseCredentials(const std::string& path)
 {
@@ -225,7 +225,6 @@ void DatabaseManager::resetSpendColumn(const std::string& path){
 std::vector<std::string> DatabaseManager::getUsersEmailsFromTable(const std::string& table_type, const std::string& path){
     std::vector<std::string> emails;
     
-    std::stringstream error_stream;
     const std::string table_name = getTableName(table_type, path);
     std::stringstream ss_users_table_request;
     ss_users_table_request << "SELECT mail FROM " << table_name << ";";
@@ -241,4 +240,39 @@ std::vector<std::string> DatabaseManager::getUsersEmailsFromTable(const std::str
     }
     
     return emails;
+}
+
+
+void DatabaseManager::incrementSpendParamForUser(const std::string& mail_address, const std::string& path)
+{
+    const std::string users_table_name = getTableName("users_table_name", path);
+    std::stringstream ss_users_table_request;
+    ss_users_table_request << "UPDATE " << users_table_name <<"  SET spend = spend + 1 WHERE mail = '" << mail_address << "';";
+    makeDatabaseAction(ss_users_table_request.str(), path);
+}
+void DatabaseManager::increaseSpendParamForUser(const std::string& mail_address, const int addition, const std::string& path)
+{
+    const std::string users_table_name = getTableName("users_table_name", path);
+    std::stringstream ss_users_table_request;
+    ss_users_table_request << "UPDATE " << users_table_name <<"  SET spend = spend + " << addition << " WHERE mail = '" << mail_address << "';";
+    makeDatabaseAction(ss_users_table_request.str(), path);
+}
+
+bool DatabaseManager::isPasswordCorrect(const std::string& mail_address, const std::string& given_password, const std::string& path)
+{
+    const std::string hashed_given_password = apiKeyManager->hashGivenString(given_password);
+    const std::string users_table_name = getTableName("users_table_name", path);
+
+    std::stringstream ss_users_table_request;
+    ss_users_table_request << "SELECT hashed_api_key FROM " << users_table_name <<" WHERE mail='"<<mail_address<<"';";
+    sql::ResultSet& db_response = getDatabaseResult(ss_users_table_request.str(), path);
+    try {
+        while (db_response.next()) {
+            std::string real_hashed_password = db_response.getString("hashed_api_key");
+            return (hashed_given_password == real_hashed_password);
+        }
+    } catch (const std::exception& e) {
+        throw std::runtime_error(e.what());
+    }
+    return false;
 }

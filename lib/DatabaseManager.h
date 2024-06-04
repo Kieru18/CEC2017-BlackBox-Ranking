@@ -7,10 +7,11 @@
 #include <cppconn/exception.h>
 #include <cppconn/resultset.h>
 #include <cppconn/statement.h>
-
+#include "ApiKeyManager.h"
 
 class DatabaseManager {
 private:
+    std::unique_ptr<ApiKeyManager> apiKeyManager;
     const static std::unordered_map<std::string, int> function_name_to_case;
 public:
     DatabaseManager() = default;
@@ -25,4 +26,8 @@ public:
     void deleteUserFromRequestTable(const std::string& mail_address, const std::string& path);
     void resetSpendColumn(const std::string& path);
     std::vector<std::string> getUsersEmailsFromTable(const std::string& table_type, const std::string& path);
+    void incrementSpendParamForUser(const std::string& mail_address, const std::string& path);
+    void increaseSpendParamForUser(const std::string& mail_address, const int addition, const std::string& path);
+    bool isPasswordCorrect(const std::string& mail_address, const std::string& given_password, const std::string& path);
+    int getSpendParamOfUser(const std::string& mail_address, const std::string& path);
 };
