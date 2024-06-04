@@ -493,18 +493,32 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
             if ((isUserRegistrated && isPasswordOk) && isEnoughToSpend){
                 const int function_number = jsonParser->parseDataFromJson<int>(body, "function_number");
                 const std::vector<double> specimen = jsonParser->parseSpecimenFromJson(body);
-                const double result = functionManager->getFunctionResults(function_number, specimen);
-                dbManager->incrementSpendParamForUser(mail, credentials_path);
-                response = generateHttpTextResponse(std::to_string(result));
+                const int d = specimen.size();
+                if (function_number<1 || function_number > 30)
+                {
+                    response = generateHttpHtmlResponse("{\"is_valid\":false,\"error\": \"Funkcja może mieć numer od 1 do 30 (włącznie)!\"}");
+                }
+                
+                else 
+                {
+                    if (((d == 2 || d == 10) || (d == 20 || d == 30)) || (d == 50 || d == 100)){
+                        const double result = functionManager->getFunctionResults(function_number, specimen);
+                        dbManager->incrementSpendParamForUser(mail, credentials_path);
+                        response = generateHttpTextResponse("{\"is_valid\":true, \"result\":"+std::to_string(result)+"}");
+                    }
+                    else {
+                        response = generateHttpHtmlResponse("{\"is_valid\":false,\"error\": \"Osobnik może mieć wymiary 2, 10, 20, 30, 50 lub 100\"}");
+                    }
+                }
             }
             else if(!isUserRegistrated){
-                response = generateHttpHtmlResponse("Użytkownik nie jest zarejestrowany");
+                response = generateHttpHtmlResponse("{\"is_valid\":false,\"error\": \"Użytkownik nie jest zarejestrowany\"}");
             }
             else if(!isPasswordOk){
-                response = generateHttpHtmlResponse("Podany klucz API jest niepoprawny");
+                response = generateHttpHtmlResponse("{\"is_valid\":false,\"error\": \"Podany klucz API jest niepoprawny\"}");
             }
             else if(!isEnoughToSpend){
-                response = generateHttpHtmlResponse("Osiągnięto limit wywołań funkcji oceny");
+                response = generateHttpHtmlResponse("{\"is_valid\":false,\"error\": \"Osiągnięto limit wywołań funkcji oceny\"}");
             }
         }
 
