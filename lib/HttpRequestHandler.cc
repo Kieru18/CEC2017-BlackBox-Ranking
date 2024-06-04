@@ -145,7 +145,7 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
         const std::string gui_password = getGUIPassword(credentials_path);
         const std::string hashed_gui_password = apiKeyManager->hashGivenString(gui_password);
 
-        boost::asio::streambuf request(8192);
+        boost::asio::streambuf request(4*8192);
         boost::system::error_code error;
         boost::asio::read_until(*socket, request, "\r\n\r\n", error);
 
@@ -170,12 +170,12 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
                 header_line_stream >> content_length;
             }
         }
-        std::cout << "Finished reading headers\n";
+        //std::cout << "Finished reading headers\n";
 
         // Read the body based on Content-Length
         std::string body;
         if (content_length > 0) {
-            std::cout << "Reading body of size " << content_length << "\n";
+            //std::cout << "Reading body of size " << content_length << "\n";
             std::vector<char> body_data(content_length);
 
             // Read any remaining part of the body from the initial request buffer
@@ -195,7 +195,7 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
             }
         }
 
-        std::cout << "BODY\n" << body << "\n";
+        //std::cout << "BODY\n" << body << "\n";
 
         std::string response;
 
@@ -476,22 +476,36 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
 
         //@TODO verify if user is registered, check call limit, check if function exists
         else if (method == "POST" && api_path == "/evaluate") {
-            /*const std::string mail = jsonParser->parseDataFromJson<std::string>(body, "mail");
+            const std::string mail = jsonParser->parseDataFromJson<std::string>(body, "mail");
+            std::cout << "Użytkownik o adresie email " << mail << "chce wywołać funkcję oceny\n";
+
             const std::string api_key = jsonParser->parseDataFromJson<std::string>(body, "api_key");
             bool isUserRegistrated = dbManager->isUserRecordedInTable(mail, "users_table_name", credentials_path);
             bool isPasswordOk = false;
-            //bool isEnoughToSpend = false;
+            bool isEnoughToSpend = false;
             if (isUserRegistrated){
                 isPasswordOk = dbManager->isPasswordCorrect(mail, api_key, credentials_path);
             }
             if (isUserRegistrated && isPasswordOk) {
-                response = generateHttpTextResponse("Mail i klucz API są poprawne");
-            }*/
-
-            const int function_number = jsonParser->parseDataFromJson<int>(body, "function_number");
-            const std::vector<double> specimen = jsonParser->parseSpecimenFromJson(body);
-            const double result = functionManager->getFunctionResults(function_number, specimen);
-            response = generateHttpTextResponse(std::to_string(result));
+                int alreadySpent = dbManager->getSpendParamOfUser(mail, credentials_path);
+                isEnoughToSpend = (alreadySpent+1 <= max_eval_call_limit_); 
+            }
+            if ((isUserRegistrated && isPasswordOk) && isEnoughToSpend){
+                const int function_number = jsonParser->parseDataFromJson<int>(body, "function_number");
+                const std::vector<double> specimen = jsonParser->parseSpecimenFromJson(body);
+                const double result = functionManager->getFunctionResults(function_number, specimen);
+                dbManager->incrementSpendParamForUser(mail, credentials_path);
+                response = generateHttpTextResponse(std::to_string(result));
+            }
+            else if(!isUserRegistrated){
+                response = generateHttpHtmlResponse("Użytkownik nie jest zarejestrowany");
+            }
+            else if(!isPasswordOk){
+                response = generateHttpHtmlResponse("Podany klucz API jest niepoprawny");
+            }
+            else if(!isEnoughToSpend){
+                response = generateHttpHtmlResponse("Osiągnięto limit wywołań funkcji oceny");
+            }
         }
 
         else if (method == "POST" && api_path == "/evaluate_population") {

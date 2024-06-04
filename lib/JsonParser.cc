@@ -42,9 +42,7 @@ std::vector<std::vector<double>> JsonParser::parsePopulationFromJson(const std::
 std::vector<double> JsonParser::parseSpecimenFromJson(const std::string& json_data) {
     std::vector<double> specimen;
     try {
-        std::cout<<json_data<<"\n";
         nlohmann::json root = nlohmann::json::parse(json_data);
-        std::cout<<root["specimen"].size()<<"\n";
         for (size_t i = 0; i < root["specimen"].size(); ++i) {
             specimen.push_back(root["specimen"][i]);
          }

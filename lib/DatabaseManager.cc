@@ -276,3 +276,20 @@ bool DatabaseManager::isPasswordCorrect(const std::string& mail_address, const s
     }
     return false;
 }
+
+int DatabaseManager::getSpendParamOfUser(const std::string& mail_address, const std::string& path) 
+{
+    const std::string users_table_name = getTableName("users_table_name", path);
+    std::stringstream ss_users_table_request;
+
+    ss_users_table_request << "SELECT spend FROM " << users_table_name <<" WHERE mail='"<<mail_address<<"';";
+    sql::ResultSet& db_response = getDatabaseResult(ss_users_table_request.str(), path);
+    try {
+        while (db_response.next()) {
+            return db_response.getInt("spend");
+        }
+    } catch (const std::exception& e) {
+        throw std::runtime_error(e.what());
+    }
+    return -1;
+}
