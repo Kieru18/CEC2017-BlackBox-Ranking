@@ -145,7 +145,7 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
         const std::string gui_password = getGUIPassword(credentials_path);
         const std::string hashed_gui_password = apiKeyManager->hashGivenString(gui_password);
 
-        boost::asio::streambuf request(4*8192);
+        boost::asio::streambuf request(8192);
         boost::system::error_code error;
         boost::asio::read_until(*socket, request, "\r\n\r\n", error);
 
@@ -477,7 +477,7 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
         //@TODO verify if user is registered, check call limit, check if function exists
         else if (method == "POST" && api_path == "/evaluate") {
             const std::string mail = jsonParser->parseDataFromJson<std::string>(body, "mail");
-            std::cout << "Użytkownik o adresie email " << mail << "chce wywołać funkcję oceny\n";
+            std::cout << "Użytkownik o adresie email " << mail << " chce wywołać funkcję oceny\n";
 
             const std::string api_key = jsonParser->parseDataFromJson<std::string>(body, "api_key");
             bool isUserRegistrated = dbManager->isUserRecordedInTable(mail, "users_table_name", credentials_path);
@@ -523,15 +523,76 @@ void HttpRequestHandler::handleClient(std::shared_ptr<boost::asio::ip::tcp::sock
         }
 
         else if (method == "POST" && api_path == "/evaluate_population") {
-            const int function_number = jsonParser->parseDataFromJson<int>(body, "function_number");
-            const std::vector<std::vector<double>> population = jsonParser->parsePopulationFromJson(body);
-            const std::vector<double> results = functionManager->getFunctionResults(function_number, population);
-            std::string results_string;
-            for (const double result : results) {
-                results_string += std::to_string(result) + " ";
+            
+            const std::string mail = jsonParser->parseDataFromJson<std::string>(body, "mail");
+            std::cout << "Użytkownik o adresie email " << mail << "chce wywołać funkcję oceny\n";
+
+            const std::string api_key = jsonParser->parseDataFromJson<std::string>(body, "api_key");
+            bool isUserRegistrated = dbManager->isUserRecordedInTable(mail, "users_table_name", credentials_path);
+            bool isPasswordOk = false;
+            if (isUserRegistrated){
+                isPasswordOk = dbManager->isPasswordCorrect(mail, api_key, credentials_path);
             }
-            results_string = results_string.substr(0, results_string.size() - 1);
-            response = generateHttpTextResponse(results_string);
+
+            if (isUserRegistrated && isPasswordOk){
+                const int function_number = jsonParser->parseDataFromJson<int>(body, "function_number");
+                if (function_number<1 || function_number > 30)
+                {
+                    response = generateHttpHtmlResponse("{\"is_valid\":false,\"error\": \"Funkcja może mieć numer od 1 do 30 (włącznie)!\"}");
+                }
+                else 
+                {
+                    const std::vector<std::vector<double>> population = jsonParser->parsePopulationFromJson(body);
+                    if (population.size() == 0)
+                    {
+                        response = generateHttpHtmlResponse("{\"is_valid\":false,\"error\": \"Wektor osobników nie może być pusty\"}");
+                    }
+                    else{
+                        int alreadySpent = dbManager->getSpendParamOfUser(mail, credentials_path);
+                        int size_of_population = population.size();
+                        if(size_of_population + alreadySpent <= max_eval_call_limit_) {
+                            bool are_dim_of_specimen_ok = true;
+                            for(int i = 0; i<size_of_population; ++i){
+                                const int d = population[i].size();
+                                if (!(d == 2 || d == 10 || d == 20 || d == 30 || d == 50 || d == 100))
+                                {
+                                    are_dim_of_specimen_ok = false;
+                                    break;
+                                }
+                            }
+                            if(!are_dim_of_specimen_ok) {
+                                response = generateHttpHtmlResponse("{\"is_valid\":false,\"error\": \"Osobnik może mieć wymiary 2, 10, 20, 30, 50 lub 100\"}");
+                            }
+                            else {
+                                //TODO wypisz wyniki dla populacji
+
+                                const std::vector<double> results = functionManager->getFunctionResults(function_number, population);
+                                dbManager->increaseSpendParamForUser(mail, population.size(), credentials_path);
+
+                                std::string results_string = "[";
+                                for (const double result : results) {
+                                    results_string += std::to_string(result) + ", ";
+                                }
+                                results_string = results_string.substr(0, results_string.size() - 2);
+                                results_string += "]";
+                                response = generateHttpTextResponse("{\"is_valid\":true, \"result\":"+results_string+"}");
+                            }
+                        }
+                        else {
+                            response = generateHttpHtmlResponse("{\"is_valid\":false,\"error\": \"Za duża populacja, zaszłoby przekroczenie limitu wywołań funkcji oceny\"}");
+                        }
+                    }
+                }
+            }
+            else if(!isUserRegistrated){
+                response = generateHttpHtmlResponse("{\"is_valid\":false,\"error\": \"Użytkownik nie jest zarejestrowany\"}");
+            }
+            else if(!isPasswordOk){
+                response = generateHttpHtmlResponse("{\"is_valid\":false,\"error\": \"Podany klucz API jest niepoprawny\"}");
+            }
+
+            
+
         }
        
         
