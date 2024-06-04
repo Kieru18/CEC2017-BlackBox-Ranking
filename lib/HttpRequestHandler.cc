@@ -1,3 +1,6 @@
+// Jakub Kieruczenko, Bartosz Jaźwiec
+// class managing API endpoints and sites
+
 #include <string>
 #include <sstream>
 #include <iostream>

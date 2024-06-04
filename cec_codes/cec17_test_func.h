@@ -1,3 +1,6 @@
+// Jakub Kieruczenko
+// header file for cec17 functions to allow use in other files
+
 #pragma once
 
 void cec17_test_func(double *x, double *f, int nx, int mx,int func_num);

@@ -1,3 +1,6 @@
+// Jakub Kieruczenko, Bartosz Jaźwiec
+// wrapper class for cec2017 functions
+
 #pragma once
 #include <string>
 #include <vector>

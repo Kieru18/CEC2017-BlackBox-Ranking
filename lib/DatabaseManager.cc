@@ -1,3 +1,6 @@
+// Jakub Kieruczenko, Bartosz Jaźwiec
+// class handling database operations
+
 #include <string>
 #include <tuple>
 #include <iostream>

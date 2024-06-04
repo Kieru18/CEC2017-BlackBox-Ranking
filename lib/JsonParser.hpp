@@ -1,3 +1,6 @@
+// Jakub Kieruczenko, Bartosz Jaźwiec
+// complementary class for JSON parsing
+
 #pragma once
 #include <iostream>
 #include <sstream>

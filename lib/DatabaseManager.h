@@ -1,3 +1,6 @@
+// Jakub Kieruczenko, Bartosz Jaźwiec
+// class handling database operations
+
 #pragma once
 
 #include <string>

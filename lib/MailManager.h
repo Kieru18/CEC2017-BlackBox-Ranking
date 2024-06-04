@@ -1,3 +1,6 @@
+// Jakub Kieruczenko, Bartosz Jaźwiec
+// class managing email operations
+
 #pragma once
 
 #include <string>

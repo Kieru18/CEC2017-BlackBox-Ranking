@@ -1,3 +1,6 @@
+// Jakub Kieruczenko, Bartosz Jaźwiec
+// entry point of application - server handling clients on multiple threads
+
 #include <boost/asio.hpp>
 #include <iostream>
 #include <memory>
@@ -20,7 +23,7 @@
 
 int main() {
     try {
-        const std::string CREDENTIALS_PATH = "credentials.json"; // this should be in config file?
+        const std::string CREDENTIALS_PATH = "credentials.json";
 
         boost::asio::io_context io_context;
         

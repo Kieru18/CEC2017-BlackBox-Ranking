@@ -1,3 +1,6 @@
+// Jakub Kieruczenko, Bartosz Jaźwiec
+// class managing API endpoints and sites
+
 #pragma once
 
 #include <string>

@@ -1,3 +1,6 @@
+// Jakub Kieruczenko, Bartosz Jaźwiec
+// class handling api key creation and hashing
+
 #pragma once
 
 #include <string>
